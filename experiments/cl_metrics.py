@@ -6,7 +6,7 @@ import numpy as np
 def hidden_matrix(sgnn, X):
     H = np.empty((len(X), sgnn.N))
     for i, x in enumerate(X):
-        _, h = sgnn.forward(x)
+        h, _ = sgnn.forward(x)
         H[i] = h
     return H
 

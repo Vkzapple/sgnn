@@ -60,7 +60,7 @@ def run_config(X, labels, drift_points, novelty_points, mode, stream_seed, verbo
     for t in range(T):
         x_t, x_next = X[t], X[t + 1]
         pe_t = sgnn.backward_and_step(x_t, x_next, lr=1e-2)
-        _, h_t = sgnn.forward(x_t)
+        h_t, _ = sgnn.forward(x_t)
         H_hist.append(h_t.copy())
 
         if mode == "sgnn_agb_v2":

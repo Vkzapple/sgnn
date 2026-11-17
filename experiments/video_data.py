@@ -93,7 +93,7 @@ def build_stream(d_pca=64):
             print(f"  seq {k} {seq} siap ({len(F)} frame)", flush=True)
 
     Z = np.vstack(feats)
-    y = np.repeat(np.arange(N_SEQ), FRAMES_PER_SEQ)
+    y = np.concatenate([np.full(len(F), k) for k, F in enumerate(feats)])
     first = y == 0
     mu, sd = Z[first].mean(0), Z[first].std(0) + 1e-6
     Zs = (Z - mu) / sd

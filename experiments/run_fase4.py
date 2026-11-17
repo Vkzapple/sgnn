@@ -32,7 +32,7 @@ def run_config(X, labels, mode, seed):
     log, H = [], []
     for t in range(len(X) - 1):
         pe = sgnn.backward_and_step(X[t], X[t + 1], lr=1e-2)
-        _, h = sgnn.forward(X[t])
+        h, _ = sgnn.forward(X[t])
         H.append(h.copy())
         if mode == "sgnn_agb_v2":
             agc.update_replay(X[t], X[t + 1])
