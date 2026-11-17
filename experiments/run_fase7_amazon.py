@@ -1,4 +1,4 @@
-"""Fase 7 — Amazon Product Reviews (SNAP `reviews_Software_5.json.gz`, 9.7 MB,"""
+"""Fase 7 — Amazon Product Reviews (SNAP reviews_Software_5)."""
 
 import sys, os, gzip, json, time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -9,9 +9,7 @@ import requests
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import TruncatedSVD
 
-from src.core.sgnn_core import SGNNCore
-from src.controller.agc_v2 import AdaptiveGrowthControllerV2
-from experiments.run_fase5_clear10 import run_config, probe_acc_per_bucket
+from experiments.run_fase5_clear10 import run_config
 
 RESULTS = os.path.join(os.path.dirname(__file__), "..", "results")
 DATA = os.path.join(os.path.dirname(__file__), "..", "data")
@@ -62,16 +60,16 @@ def build_features(df, seg, d=64):
 
 def main():
     t0 = time.time()
-    df, seg = load_stream()
-    print(f"Amazon Software: {len(df)} ulasan, {df.ts.nunique()} timestamp unik")
-    X = build_features(df, seg)
-    y = df.rating.values
+    reviews, seg = load_stream()
+    print(f"Amazon Software: {len(reviews)} ulasan, {reviews.ts.nunique()} timestamp unik")
+    X = build_features(reviews, seg)
+    y = reviews.rating.values
     print(f"Fitur: {X.shape}, kelas rating: {sorted(set(y))}")
 
     rows = []
     for seed in [0, 1, 2]:
         for mode in ["sgnn_agb_v2", "static"]:
-            d, acc, bounds, delays, row = run_config(X, y, seg, mode, seed)
+            df, acc, bounds, delays, row = run_config(X, y, seg, mode, seed)
             rows.append(row)
             print(f"[{mode:12s} seed{seed}] PE={row['mean_pe']:.2f} "
                   f"PEakhir={row['mean_pe_last2buckets']:.2f} "
@@ -79,8 +77,8 @@ def main():
                   f"prune={row['prune']} det={row['delay_frac_detected']:.2f} "
                   f"acc={row['probe_acc_mean']:.3f}")
             if seed == 0 and mode == "sgnn_agb_v2":
-                d.to_csv(os.path.join(RESULTS, "fase7_amazon_v2_seed0.csv"),
-                         index=False)
+                df.to_csv(os.path.join(RESULTS, "fase7_amazon_v2_seed0.csv"),
+                          index=False)
 
     summary = pd.DataFrame(rows)
     summary.to_csv(os.path.join(RESULTS, "fase7_amazon_summary.csv"), index=False)

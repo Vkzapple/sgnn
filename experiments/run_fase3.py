@@ -97,6 +97,7 @@ def main():
     t0 = time.time()
     T, d = 6000, 16
     rows = []
+    seeds = list(range(42, 52))
 
     for seed in seeds:
         X, labels, drift_points, novelty_points = generate_stream_v2(

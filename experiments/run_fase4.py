@@ -1,4 +1,4 @@
-"""Fase 4 — Evaluasi AGC v2 pada dataset sintetis standar MOA (Sesuai"""
+"""Fase 4 — AGC v2 pada dataset sintetis standar MOA (SEA, RandomRBF)."""
 
 import sys, os, time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))

@@ -5,14 +5,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import numpy as np
 import pandas as pd
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import requests
 from sklearn.decomposition import PCA
 
-from src.core.sgnn_core import SGNNCore
-from src.controller.agc_v2 import AdaptiveGrowthControllerV2
 from experiments.run_fase5_clear10 import run_config, plot
 
 RESULTS = os.path.join(os.path.dirname(__file__), "..", "results")
@@ -37,10 +32,10 @@ def load_split(per_task=600, n_tasks=10, classes_per_task=10):
     ensure_data()
     with open(os.path.join(DATA, "cifar-100-python", "test"), "rb") as f:
         d = pickle.load(f, encoding="bytes")
+    X = np.asarray(d[b"data"], dtype=np.uint8)
     y = np.asarray(d[b"fine_labels"])
     rng = np.random.default_rng(0)
 
-    paths_placeholder = []
     imgs, labels, tasks = [], [], []
     for task in range(n_tasks):
         cls_set = set(range(task * classes_per_task,
@@ -48,6 +43,7 @@ def load_split(per_task=600, n_tasks=10, classes_per_task=10):
         idx = np.where(np.isin(y, list(cls_set)))[0]
         idx = rng.permutation(idx)[:per_task]
         imgs.append(X[idx])
+        labels.append(y[idx] % classes_per_task)
         tasks.append(np.full(len(idx), task))
     return (np.vstack(imgs).astype(np.float64), np.concatenate(labels),
             np.concatenate(tasks))

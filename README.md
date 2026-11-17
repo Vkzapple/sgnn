@@ -4,9 +4,6 @@ Riset disertasi (S3): jaringan saraf yang menumbuhkan/memangkas kapasitasnya
 secara otonom pada stream data non-stasioner, dengan objektif *predictive
 coding* dan controller adaptif (Adaptive Growth Controller, AGC).
 
-Paper awal (diagnostic study) tersedia sebagai PDF di root. Repo ini berisi
-implementasi, redesign controller, dan seluruh eksperimen lanjutan.
-
 ## Struktur
 
 ```
