@@ -139,6 +139,7 @@ class AdaptiveGrowthControllerV2:
         action = "STOP"
         g_m = None
         S_t = np.nan
+        Z_novelty = np.nan
 
         if self.warmup_counter > 0:
             self._warmup_pool["delta_L"].append(delta_L)
@@ -210,6 +211,7 @@ class AdaptiveGrowthControllerV2:
 
         return {
             "delta_L": delta_L, "drift_raw": drift_raw, "novelty_raw": novelty_raw,
+            "z_novelty": Z_novelty,
             "S_t": S_t,
             "B_t": self.B_t, "P_t": self.P_t,
             "status_drift": self.status_drift, "action": action,
