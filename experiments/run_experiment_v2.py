@@ -1,11 +1,15 @@
 """Eksperimen Fase 2 — SGNN-AGB dengan AGC v2 (redesign sesuai paper §IV.F)"""
 
-import sys, os, time
+import sys
+import os
+import time
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import numpy as np
 import pandas as pd
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
@@ -13,8 +17,10 @@ from src.core.sgnn_core import SGNNCore
 from src.controller.agc_v2 import AdaptiveGrowthControllerV2
 from src.eval.synthetic_stream import generate_stream
 
+
 RESULTS = os.path.join(os.path.dirname(__file__), "..", "results")
 os.makedirs(RESULTS, exist_ok=True)
+
 
 def hidden_accuracy_probe(H_hist, labels_hist, window=200, k=3):
     """Probe pada representasi hidden h_t. Window yang melintasi aksi
@@ -29,8 +35,8 @@ def hidden_accuracy_probe(H_hist, labels_hist, window=200, k=3):
             continue
         H = np.stack([np.asarray(h, dtype=float) for h in seg])
         y = labels_hist[start:test_end]
-        H_train, y_train = H[: window // 2], y[: window // 2]
-        H_test, y_test = H[window // 2:], y[window // 2:]
+        H_train, y_train = H[:train_end - start], y[:train_end - start]
+        H_test, y_test = H[train_end - start:], y[train_end - start:]
         if len(H_train) < k or len(H_test) == 0:
             continue
         correct = 0
@@ -42,6 +48,7 @@ def hidden_accuracy_probe(H_hist, labels_hist, window=200, k=3):
         accs.append(correct / len(H_test))
         idxs.append(test_end)
     return np.array(idxs), np.array(accs)
+
 
 def run_config(X, labels, drift_points, novelty_points, mode, stream_seed, verbose=False):
     """mode: 'sgnn_agb_v2' | 'static' | 'grow_only' | 'prune_only'"""
@@ -119,6 +126,7 @@ def run_config(X, labels, drift_points, novelty_points, mode, stream_seed, verbo
               f"prune={row['prune_events']} corr={row['corr_pe_acc']:.3f}")
     return df, idxs, accs, pe_smooth, pe_at_probe, row
 
+
 def main():
     t0 = time.time()
     seeds = [42, 43, 44]
@@ -149,6 +157,7 @@ def main():
     print(f"\nSelesai dalam {time.time() - t0:.0f} detik. "
           f"Output di folder results/.")
 
+
 def plot_run(df, idxs, accs, pe_smooth, pe_at_probe, drift_points, novelty_points, seed):
     fig, axes = plt.subplots(3, 1, figsize=(10, 10), sharex=True)
     axes[0].plot(df["t"], df["n_neurons"])
@@ -166,6 +175,7 @@ def plot_run(df, idxs, accs, pe_smooth, pe_at_probe, drift_points, novelty_point
     plt.tight_layout()
     plt.savefig(os.path.join(RESULTS, f"fase2_sgnn_agb_v2_seed{seed}.png"), dpi=130)
     plt.close(fig)
+
 
 if __name__ == "__main__":
     main()

@@ -3,6 +3,7 @@
 from collections import deque
 import numpy as np
 
+
 def _rbf_mmd2(X: np.ndarray, Y: np.ndarray, gamma: float = None) -> float:
     """MMD^2 tak berbias dengan kernel RBF, tanpa dependensi scipy."""
     if len(X) < 2 or len(Y) < 2:
@@ -22,6 +23,7 @@ def _rbf_mmd2(X: np.ndarray, Y: np.ndarray, gamma: float = None) -> float:
             + (Kyy.sum() - np.trace(Kyy)) / (n * (n - 1))
             - 2 * Kxy.mean())
     return max(float(mmd2), 0.0)
+
 
 class ReservoirBuffer:
     """Buffer kapasitas tetap dengan reservoir sampling sederhana."""
@@ -47,6 +49,7 @@ class ReservoirBuffer:
     def __len__(self):
         return len(self.data)
 
+
 class EWMAStat:
     """Mean & mean-abs-deviation via EWMA, dipakai untuk z-score per sinyal."""
 
@@ -67,6 +70,7 @@ class EWMAStat:
 
     def zscore(self, x: float, eps: float = 1e-6) -> float:
         return (x - self.mu) / (self.sigma + eps)
+
 
 class AdaptiveGrowthController:
     def __init__(
@@ -113,7 +117,8 @@ class AdaptiveGrowthController:
 
     def _update_drift(self, x_t):
         self.window_recent.append(x_t)
-        if len(self.window_ref) < self.window_ref.maxlen or len(self.window_recent) < self.window_recent.maxlen:
+        if len(self.window_ref) < self.window_ref.maxlen or len(
+                self.window_recent) < self.window_recent.maxlen:
             if len(self.window_ref) < self.window_ref.maxlen:
                 self.window_ref.append(x_t)
             return 0.0

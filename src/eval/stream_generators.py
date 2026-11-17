@@ -1,6 +1,7 @@
-"""Generator stream standar MOA (reimplementasi NumPy, tanpa dependensi Java):"""
+"""Generator stream standar MOA (SEA, RandomRBF) dalam NumPy."""
 
 import numpy as np
+
 
 def generate_sea(T=6000, seed=0, drift_points=(1500, 3500),
                  thetas=(8.0, 9.0, 7.0), n_features=3, noise=0.1,
@@ -26,6 +27,7 @@ def generate_sea(T=6000, seed=0, drift_points=(1500, 3500),
     flip = rng.random(T) < noise
     y[flip] = 1 - y[flip]
     return X, y, list(drift_points)
+
 
 def generate_random_rbf(T=6000, seed=0, drift_points=(1500, 3500),
                         n_features=10, n_centroids=50, n_classes=4,

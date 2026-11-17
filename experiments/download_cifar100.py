@@ -1,5 +1,7 @@
 """Downloader dengan resume (HTTP Range) + verifikasi ukuran."""
-import os, sys, requests
+import os
+import sys
+import requests
 
 URL = "https://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz"
 PATH = os.path.join(os.path.dirname(__file__), "..", "data",

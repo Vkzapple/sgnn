@@ -1,18 +1,21 @@
-
+"""Fase 1 — eksperimen diagnostik dengan controller asli (paper)."""
 
 import sys
 import os
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import numpy as np
 import pandas as pd
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from src.core.sgnn_core import SGNNCore
 from src.controller.agc import AdaptiveGrowthController
 from src.eval.synthetic_stream import generate_stream
+
 
 def hidden_accuracy_probe(H_hist, labels_hist, window=200, k=3):
     """
@@ -40,6 +43,7 @@ def hidden_accuracy_probe(H_hist, labels_hist, window=200, k=3):
         idxs.append(test_end)
     return np.array(idxs), np.array(accs)
 
+
 def main():
     T, d = 6000, 16
     X, labels, drift_points, novelty_points = generate_stream(T=T, d=d, seed=42)
@@ -63,7 +67,13 @@ def main():
         log_rows.append(info)
 
     df = pd.DataFrame(log_rows)
-    df.to_csv(os.path.join(os.path.dirname(__file__), "..", "results", "fase1_log.csv"), index=False)
+    df.to_csv(
+        os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "results",
+            "fase1_log.csv"),
+        index=False)
 
     H_hist = np.array(H_hist)
     idxs, accs = hidden_accuracy_probe(H_hist, labels[: len(H_hist)])
@@ -89,9 +99,11 @@ def main():
     fig, axes = plt.subplots(3, 1, figsize=(10, 10), sharex=True)
     axes[0].plot(df["t"], df["n_neurons"])
     for dp in drift_points:
-        axes[0].axvline(dp, color="red", linestyle="--", alpha=0.6, label="drift" if dp == drift_points[0] else None)
+        axes[0].axvline(dp, color="red", linestyle="--", alpha=0.6,
+                        label="drift" if dp == drift_points[0] else None)
     for npnt in novelty_points:
-        axes[0].axvline(npnt, color="green", linestyle=":", alpha=0.6, label="novelty" if npnt == novelty_points[0] else None)
+        axes[0].axvline(npnt, color="green", linestyle=":", alpha=0.6,
+                        label="novelty" if npnt == novelty_points[0] else None)
     axes[0].set_ylabel("Jumlah neuron")
     axes[0].legend()
     axes[0].set_title("Bounded growth: jumlah neuron seiring waktu")
@@ -110,6 +122,7 @@ def main():
     out_path = os.path.join(os.path.dirname(__file__), "..", "results", "fase1_summary.png")
     plt.savefig(out_path, dpi=130)
     print(f"Plot disimpan di: {out_path}")
+
 
 if __name__ == "__main__":
     main()

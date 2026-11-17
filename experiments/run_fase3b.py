@@ -1,6 +1,8 @@
 """Fase 3b — Uji stres jalur GROW: stream sangat padat (komponen 4 -> 18)."""
 
-import sys, os, time
+import sys
+import os
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pandas as pd
@@ -9,7 +11,9 @@ from src.core.sgnn_core import SGNNCore
 from src.controller.agc_v2 import AdaptiveGrowthControllerV2
 from src.eval.synthetic_stream import generate_stream_v2
 
+
 RESULTS = os.path.join(os.path.dirname(__file__), "..", "results")
+
 
 def run(seed):
     X, labels, dp, npnt = generate_stream_v2(
@@ -37,6 +41,7 @@ def run(seed):
         "grow_times": [int(t) for t in df[df["action"] == "GROW"]["t"]],
     }
 
+
 def main():
     rows = []
     for seed in [42, 43, 44, 45, 46]:
@@ -54,6 +59,7 @@ def main():
     print("\nMean 5 seed:")
     print(out[["mean_pe_all", "mean_pe_last1000", "n_final", "n_max",
                "grow", "prune"]].mean().round(2).to_string())
+
 
 if __name__ == "__main__":
     main()

@@ -1,7 +1,8 @@
 import numpy as np
 
+
 def generate_stream(T=6000, d=16, n_classes_init=4, seed=0,
-                     drift_points=(1500, 3500), novelty_points=(4800,)):
+                    drift_points=(1500, 3500), novelty_points=(4800,)):
     rng = np.random.default_rng(seed)
     centers = rng.normal(0, 3, size=(n_classes_init, d))
     n_classes = n_classes_init
@@ -21,6 +22,7 @@ def generate_stream(T=6000, d=16, n_classes_init=4, seed=0,
         labels.append(cls)
 
     return np.array(X), np.array(labels), list(drift_points), list(novelty_points)
+
 
 def generate_stream_v2(T=6000, d=16, n_classes_init=4, seed=0,
                        drift_points=(1500, 3500), novelty_points=(4800, 5600),

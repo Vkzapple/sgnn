@@ -1,6 +1,7 @@
 import copy
 import numpy as np
 
+
 class SGNNCore:
     def __init__(self, d_in: int, n0: int, seed: int = 0):
         rng = np.random.default_rng(seed)
@@ -14,7 +15,7 @@ class SGNNCore:
 
     def _init_adam(self):
         self.m = {"W1": np.zeros_like(self.W1), "b1": np.zeros_like(self.b1),
-                   "W2": np.zeros_like(self.W2), "b2": np.zeros_like(self.b2)}
+                  "W2": np.zeros_like(self.W2), "b2": np.zeros_like(self.b2)}
         self.v = {k: np.zeros_like(val) for k, val in self.m.items()}
         self.t = 0
 
@@ -79,9 +80,12 @@ class SGNNCore:
         self.W2 = self.W2[keep, :]
         self.N = len(keep)
 
-        self.m["W1"] = self.m["W1"][:, keep]; self.v["W1"] = self.v["W1"][:, keep]
-        self.m["b1"] = self.m["b1"][keep]; self.v["b1"] = self.v["b1"][keep]
-        self.m["W2"] = self.m["W2"][keep, :]; self.v["W2"] = self.v["W2"][keep, :]
+        self.m["W1"] = self.m["W1"][:, keep]
+        self.v["W1"] = self.v["W1"][:, keep]
+        self.m["b1"] = self.m["b1"][keep]
+        self.v["b1"] = self.v["b1"][keep]
+        self.m["W2"] = self.m["W2"][keep, :]
+        self.v["W2"] = self.v["W2"][keep, :]
 
     def clone(self):
         return copy.deepcopy(self)

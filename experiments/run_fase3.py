@@ -1,11 +1,15 @@
-"""Fase 3 — Menuntut future work paper (Section V):"""
+"""Fase 3 — multi-seed, uji signifikansi, korelasi PE-akurasi detrended."""
 
-import sys, os, time
+import sys
+import os
+import time
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import numpy as np
 import pandas as pd
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from scipy import stats
@@ -15,10 +19,12 @@ from src.controller.agc_v2 import AdaptiveGrowthControllerV2
 from src.eval.synthetic_stream import generate_stream_v2
 from experiments.run_experiment_v2 import hidden_accuracy_probe
 
+
 RESULTS = os.path.join(os.path.dirname(__file__), "..", "results")
 os.makedirs(RESULTS, exist_ok=True)
 
 MODES = ["sgnn_agb_v2", "static", "grow_only", "prune_only"]
+
 
 def run_config(X, labels, mode, stream_seed):
     d = X.shape[1]
@@ -71,6 +77,7 @@ def run_config(X, labels, mode, stream_seed):
 
     corr_raw = np.corrcoef(pe_at_probe, accs)[0, 1] if len(accs) > 2 else np.nan
     x_time = np.arange(len(accs), dtype=float)
+
     def _resid(v):
         b, a = np.polyfit(x_time, v, 1)
         return v - (a + b * x_time)
@@ -92,6 +99,7 @@ def run_config(X, labels, mode, stream_seed):
         "corr_detrended": corr_dt,
         "probe_acc_final": accs[-1] if len(accs) else np.nan,
     }
+
 
 def main():
     t0 = time.time()
@@ -128,11 +136,11 @@ def main():
     for base in ["static", "grow_only", "prune_only"]:
         a = piv["sgnn_agb_v2"].values
         b = piv[base].values
-        t_stat, t_p = stats.ttest_rel(a, b)
+        _, t_p = stats.ttest_rel(a, b)
         try:
-            w_stat, w_p = stats.wilcoxon(a, b)
+            _, w_p = stats.wilcoxon(a, b)
         except ValueError:
-            w_stat, w_p = np.nan, np.nan
+            w_p = np.nan
         lines.append(
             f"PE(all): sgnn_agb_v2 ({a.mean():.2f}) vs {base} ({b.mean():.2f}) | "
             f"paired t-test p={t_p:.4g}, Wilcoxon p={w_p:.4g}")
@@ -142,11 +150,11 @@ def main():
     for base in ["static", "grow_only", "prune_only"]:
         a = piv_t["sgnn_agb_v2"].values
         b = piv_t[base].values
-        t_stat, t_p = stats.ttest_rel(a, b)
+        _, t_p = stats.ttest_rel(a, b)
         try:
-            w_stat, w_p = stats.wilcoxon(a, b)
+            _, w_p = stats.wilcoxon(a, b)
         except ValueError:
-            w_stat, w_p = np.nan, np.nan
+            w_p = np.nan
         lines.append(
             f"PE(last1k): sgnn_agb_v2 ({a.mean():.2f}) vs {base} ({b.mean():.2f}) | "
             f"paired t-test p={t_p:.4g}, Wilcoxon p={w_p:.4g}")
@@ -167,6 +175,7 @@ def main():
     print(agg.round(3).to_string())
     print(f"\nSelesai dalam {time.time() - t0:.0f} detik.")
 
+
 def plot_run(df, pe_smooth, idxs, accs, drift_points, novelty_points):
     fig, axes = plt.subplots(2, 1, figsize=(10, 7), sharex=True)
     axes[0].plot(df["t"], df["n_neurons"])
@@ -182,6 +191,7 @@ def plot_run(df, pe_smooth, idxs, accs, drift_points, novelty_points):
     plt.tight_layout()
     plt.savefig(os.path.join(RESULTS, "fase3_sgnn_agb_v2_seed42.png"), dpi=130)
     plt.close(fig)
+
 
 if __name__ == "__main__":
     main()

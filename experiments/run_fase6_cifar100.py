@@ -1,6 +1,11 @@
 """Fase 6 — Split-CIFAR100 (class-incremental, benchmark CL standar)."""
 
-import sys, os, tarfile, pickle, time
+import sys
+import os
+import tarfile
+import pickle
+import time
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import numpy as np
@@ -10,11 +15,13 @@ from sklearn.decomposition import PCA
 
 from experiments.run_fase5_clear10 import run_config, plot
 
+
 RESULTS = os.path.join(os.path.dirname(__file__), "..", "results")
 DATA = os.path.join(os.path.dirname(__file__), "..", "data")
 os.makedirs(RESULTS, exist_ok=True)
 TAR = os.path.join(DATA, "cifar-100-python.tar.gz")
 SRC = "https://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz"
+
 
 def ensure_data():
     if not os.path.exists(os.path.join(DATA, "cifar-100-python")):
@@ -27,6 +34,7 @@ def ensure_data():
                         f.write(ch)
         with tarfile.open(TAR) as t:
             t.extractall(DATA)
+
 
 def load_split(per_task=600, n_tasks=10, classes_per_task=10):
     ensure_data()
@@ -48,6 +56,7 @@ def load_split(per_task=600, n_tasks=10, classes_per_task=10):
     return (np.vstack(imgs).astype(np.float64), np.concatenate(labels),
             np.concatenate(tasks))
 
+
 def features_from_rgb(Xrgb, tasks, d_pca=64):
     """Fitur dari backbone beku ResNet18 (sesuai pseudocode proposal),
     lalu PCA per-sumbu dari statistik task pertama. Di-cache agar rerun cepat."""
@@ -66,6 +75,7 @@ def features_from_rgb(Xrgb, tasks, d_pca=64):
     Z = (Z - mu) / sd
     pca = PCA(n_components=d_pca, random_state=0).fit(Z[first])
     return pca.transform(Z)
+
 
 def _extract_backbone(Xrgb):
     import torch
@@ -89,6 +99,7 @@ def _extract_backbone(Xrgb):
             if (i // 64) % 20 == 0:
                 print(f"  fitur {i}/{len(Xrgb)}", flush=True)
     return np.vstack(feats).astype(np.float64)
+
 
 def main():
     t0 = time.time()
@@ -122,6 +133,7 @@ def main():
          "grow", "prune", "delay_frac_detected", "delay_mean",
          "probe_acc_mean", "probe_acc_last"]].mean().round(3).to_string())
     print(f"Selesai {time.time() - t0:.0f} detik")
+
 
 if __name__ == "__main__":
     main()

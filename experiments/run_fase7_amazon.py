@@ -1,6 +1,11 @@
 """Fase 7 — Amazon Product Reviews (SNAP reviews_Software_5)."""
 
-import sys, os, gzip, json, time
+import sys
+import os
+import gzip
+import json
+import time
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import numpy as np
@@ -11,6 +16,7 @@ from sklearn.decomposition import TruncatedSVD
 
 from experiments.run_fase5_clear10 import run_config
 
+
 RESULTS = os.path.join(os.path.dirname(__file__), "..", "results")
 DATA = os.path.join(os.path.dirname(__file__), "..", "data")
 os.makedirs(RESULTS, exist_ok=True)
@@ -20,6 +26,7 @@ PATH = os.path.join(DATA, "reviews_Software_5.json.gz")
 T = 6000
 N_SEG = 10
 
+
 def ensure_data():
     if not os.path.exists(PATH) or os.path.getsize(PATH) < 1e6:
         r = requests.get(URL, timeout=300)
@@ -27,6 +34,7 @@ def ensure_data():
         with open(PATH, "wb") as f:
             f.write(r.content)
         print("Downloaded", os.path.getsize(PATH) / 1e6, "MB")
+
 
 def load_stream():
     ensure_data()
@@ -50,6 +58,7 @@ def load_stream():
     seg = np.minimum((np.arange(len(df)) * N_SEG) // len(df), N_SEG - 1)
     return df, seg
 
+
 def build_features(df, seg, d=64):
     first = seg == 0
     vec = TfidfVectorizer(max_features=3000, stop_words="english",
@@ -57,6 +66,7 @@ def build_features(df, seg, d=64):
     Z = vec.transform(df.text)
     svd = TruncatedSVD(n_components=d, random_state=0).fit(Z[first])
     return svd.transform(Z).astype(np.float64)
+
 
 def main():
     t0 = time.time()
@@ -88,6 +98,7 @@ def main():
          "grow", "prune", "delay_frac_detected", "delay_mean",
          "probe_acc_mean", "probe_acc_last"]].mean().round(3).to_string())
     print(f"Selesai {time.time() - t0:.0f} detik")
+
 
 if __name__ == "__main__":
     main()

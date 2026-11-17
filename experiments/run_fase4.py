@@ -1,11 +1,15 @@
 """Fase 4 — AGC v2 pada dataset sintetis standar MOA (SEA, RandomRBF)."""
 
-import sys, os, time
+import sys
+import os
+import time
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import numpy as np
 import pandas as pd
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from scipy import stats
@@ -15,10 +19,12 @@ from src.controller.agc_v2 import AdaptiveGrowthControllerV2
 from src.eval.stream_generators import generate_sea, generate_random_rbf
 from experiments.run_experiment_v2 import hidden_accuracy_probe
 
+
 RESULTS = os.path.join(os.path.dirname(__file__), "..", "results")
 os.makedirs(RESULTS, exist_ok=True)
 T = 6000
 DRIFT = (1500, 3500)
+
 
 def run_config(X, labels, mode, seed):
     sgnn = SGNNCore(d_in=X.shape[1], n0=64, seed=0)
@@ -43,6 +49,7 @@ def run_config(X, labels, mode, seed):
     pe_at_probe = pe_smooth[np.clip(idxs, 0, len(pe_smooth) - 1)]
 
     x_t = np.arange(len(accs), dtype=float)
+
     def resid(v):
         b, a = np.polyfit(x_t, v, 1)
         return v - (a + b * x_t)
@@ -75,6 +82,7 @@ def run_config(X, labels, mode, seed):
         "probe_acc_final": accs[-1] if len(accs) else np.nan,
         **rec,
     }
+
 
 def main():
     t0 = time.time()
@@ -135,6 +143,7 @@ def main():
         f.write(rep + "\n")
     print(f"\nSelesai dalam {time.time() - t0:.0f} detik.")
 
+
 def plot_run(df, pe_s, sname):
     fig, ax = plt.subplots(2, 1, figsize=(10, 7), sharex=True)
     ax[0].plot(df.t, df.n_neurons)
@@ -150,6 +159,7 @@ def plot_run(df, pe_s, sname):
     plt.tight_layout()
     plt.savefig(os.path.join(RESULTS, f"fase4_{sname}.png"), dpi=130)
     plt.close(fig)
+
 
 if __name__ == "__main__":
     main()

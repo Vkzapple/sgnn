@@ -1,11 +1,18 @@
 """Fase 5 — Clear-10 (real-world image stream, 2004-2014, 10 bucket temporal)."""
 
-import sys, os, zipfile, glob, time, json
+import sys
+import os
+import zipfile
+import glob
+import time
+import json
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import numpy as np
 import pandas as pd
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from PIL import Image
@@ -14,11 +21,13 @@ from sklearn.decomposition import PCA
 from src.core.sgnn_core import SGNNCore
 from src.controller.agc_v2 import AdaptiveGrowthControllerV2
 
+
 RESULTS = os.path.join(os.path.dirname(__file__), "..", "results")
 DATA = os.path.join(os.path.dirname(__file__), "..", "data")
 os.makedirs(RESULTS, exist_ok=True)
 ZIP = os.path.join(DATA, "clear10-test.zip")
 EXTRACT = os.path.join(DATA, "clear10_test")
+
 
 def ensure_extracted():
     if os.path.exists(EXTRACT) and glob.glob(os.path.join(EXTRACT, "**", "*.jpg"),
@@ -26,6 +35,7 @@ def ensure_extracted():
         return
     with zipfile.ZipFile(ZIP) as z:
         z.extractall(EXTRACT)
+
 
 def build_index(limit_per_bucket=600):
     """Kumpulkan (path, bucket, class) dari struktur folder Clear-10."""
@@ -54,9 +64,11 @@ def build_index(limit_per_bucket=600):
             buckets.append(b)
     return X_raw, np.array(y), np.array(buckets), order
 
+
 def img_features(path):
     im = Image.open(path).convert("L").resize((16, 16))
     return np.asarray(im, dtype=np.float64).ravel() / 255.0
+
 
 def build_features(paths, buckets, d_pca=64, seed=0):
     """Fitur dari backbone beku ResNet18 (sesuai pseudocode proposal:
@@ -82,6 +94,7 @@ def build_features(paths, buckets, d_pca=64, seed=0):
     pca = PCA(n_components=d_pca, random_state=seed).fit(Zs[first])
     return pca.transform(Zs).astype(np.float64)
 
+
 def _extract_backbone(paths, batch=32):
     import torch
     from torchvision.models import resnet18, ResNet18_Weights
@@ -106,6 +119,7 @@ def _extract_backbone(paths, batch=32):
                 print(f"  fitur {i}/{len(paths)}", flush=True)
     return np.vstack(out).astype(np.float64)
 
+
 def probe_acc_per_bucket(H, y, buckets):
     """kNN probe per bucket (label hanya untuk evaluasi)."""
     out = {}
@@ -123,6 +137,7 @@ def probe_acc_per_bucket(H, y, buckets):
             correct += int(pred == lab[i])
         out[b] = correct / (len(idx) - half)
     return out
+
 
 def run_config(X, y, buckets, mode, model_seed):
     sgnn = SGNNCore(d_in=X.shape[1], n0=64, seed=model_seed)
@@ -168,6 +183,7 @@ def run_config(X, y, buckets, mode, model_seed):
         "per_bucket_pe": str({int(k): round(v, 2) for k, v in per_bucket_pe.items()}),
     }
 
+
 def main():
     t0 = time.time()
     ensure_extracted()
@@ -206,6 +222,7 @@ def main():
          "probe_acc_mean", "probe_acc_last"]].mean().round(3).to_string())
     print(f"Selesai {time.time() - t0:.0f} detik")
 
+
 def plot(df, bounds):
     fig, ax = plt.subplots(2, 1, figsize=(10, 7), sharex=True)
     ax[0].plot(df.t, df.n_neurons)
@@ -220,6 +237,7 @@ def plot(df, bounds):
     plt.tight_layout()
     plt.savefig(os.path.join(RESULTS, "fase5_clear10.png"), dpi=130)
     plt.close(fig)
+
 
 if __name__ == "__main__":
     main()

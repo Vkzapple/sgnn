@@ -1,9 +1,10 @@
-"""AGC v2 — implementasi 5 redesign requirements dari paper (Section IV.F):"""
+"""AGC v2 — controller redesigned sesuai 5 requirement paper (Section IV.F)."""
 
 from collections import deque
 import numpy as np
 
 from src.controller.agc import ReservoirBuffer, _rbf_mmd2
+
 
 class RunningStat:
     """Mean & std via Welford (robust, dipakai setelah warmup selesai)."""
@@ -23,6 +24,7 @@ class RunningStat:
     def sigma(self) -> float:
         return float(np.sqrt(max(self.m2 / max(self.n - 1, 1), 0.0)))
 
+
 def _median_heuristic_gamma(X: np.ndarray, rng: np.random.Generator,
                             max_samples: int = 200) -> float:
     """gamma = 1/median(sqdist) — sensitif terhadap skala fitur (fix MMD 'mati')."""
@@ -34,6 +36,7 @@ def _median_heuristic_gamma(X: np.ndarray, rng: np.random.Generator,
     iu = np.triu_indices(len(A), k=1)
     med = np.median(sq[iu])
     return 1.0 / med if med > 0 else 1.0
+
 
 class AdaptiveGrowthControllerV2:
     def __init__(
@@ -143,9 +146,12 @@ class AdaptiveGrowthControllerV2:
             self._warmup_pool["novelty"].append(novelty_raw)
             self.warmup_counter -= 1
             if self.warmup_counter == 0:
-                self.stat_loss = RunningStat();  [self.stat_loss.update(v) for v in self._warmup_pool["delta_L"]]
-                self.stat_drift = RunningStat(); [self.stat_drift.update(v) for v in self._warmup_pool["drift"]]
-                self.stat_novelty = RunningStat(); [self.stat_novelty.update(v) for v in self._warmup_pool["novelty"]]
+                self.stat_loss = RunningStat()
+                [self.stat_loss.update(v) for v in self._warmup_pool["delta_L"]]
+                self.stat_drift = RunningStat()
+                [self.stat_drift.update(v) for v in self._warmup_pool["drift"]]
+                self.stat_novelty = RunningStat()
+                [self.stat_novelty.update(v) for v in self._warmup_pool["novelty"]]
                 self._s_hist.clear()
         else:
             self.stat_loss.update(delta_L)
