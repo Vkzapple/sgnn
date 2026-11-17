@@ -1,0 +1,6 @@
+PE(all): sgnn_agb_v2 (282.70) vs static (287.07) | paired t-test p=0.00475, Wilcoxon p=0.009766
+PE(all): sgnn_agb_v2 (282.70) vs grow_only (291.34) | paired t-test p=1.354e-05, Wilcoxon p=0.001953
+PE(all): sgnn_agb_v2 (282.70) vs prune_only (283.21) | paired t-test p=0.6752, Wilcoxon p=0.4316
+PE(last1k): sgnn_agb_v2 (368.03) vs static (382.33) | paired t-test p=5.022e-07, Wilcoxon p=0.001953
+PE(last1k): sgnn_agb_v2 (368.03) vs grow_only (392.15) | paired t-test p=1.431e-07, Wilcoxon p=0.001953
+PE(last1k): sgnn_agb_v2 (368.03) vs prune_only (374.74) | paired t-test p=0.0001965, Wilcoxon p=0.003906

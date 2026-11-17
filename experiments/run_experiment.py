@@ -14,7 +14,6 @@ from src.core.sgnn_core import SGNNCore
 from src.controller.agc import AdaptiveGrowthController
 from src.eval.synthetic_stream import generate_stream
 
-
 def hidden_accuracy_probe(H_hist, labels_hist, window=200, k=3):
     """
     Probe OFFLINE saja (bukan bagian AGC): kNN classifier sederhana pada
@@ -41,7 +40,6 @@ def hidden_accuracy_probe(H_hist, labels_hist, window=200, k=3):
         idxs.append(test_end)
     return np.array(idxs), np.array(accs)
 
-
 def main():
     T, d = 6000, 16
     X, labels, drift_points, novelty_points = generate_stream(T=T, d=d, seed=42)
@@ -56,7 +54,7 @@ def main():
         x_t, x_next = X[t], X[t + 1]
 
         pe_t = sgnn.backward_and_step(x_t, x_next, lr=1e-2)
-        H_hist.append(x_t.copy())  # dim input tetap (h_t berubah dimensi tiap grow/prune)
+        H_hist.append(x_t.copy())
 
         agc.update_replay(x_t, x_next)
         info = agc.step(x_t, pe_t, sgnn)
@@ -67,7 +65,6 @@ def main():
     df = pd.DataFrame(log_rows)
     df.to_csv(os.path.join(os.path.dirname(__file__), "..", "results", "fase1_log.csv"), index=False)
 
-    # ---- Probe offline hidden accuracy ----
     H_hist = np.array(H_hist)
     idxs, accs = hidden_accuracy_probe(H_hist, labels[: len(H_hist)])
 
@@ -113,7 +110,6 @@ def main():
     out_path = os.path.join(os.path.dirname(__file__), "..", "results", "fase1_summary.png")
     plt.savefig(out_path, dpi=130)
     print(f"Plot disimpan di: {out_path}")
-
 
 if __name__ == "__main__":
     main()

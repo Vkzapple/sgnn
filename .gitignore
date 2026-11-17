@@ -1,0 +1,17 @@
+data/
+*.zip
+*.tar.gz
+*.npy
+
+*.pdf
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+proposal_text.txt
+conf_text.txt
+
+.vscode/
+.DS_Store

@@ -1,0 +1,61 @@
+# SGNN-AGB — Self-Growing Neural Network with Adaptive Growth Boundary
+
+Riset disertasi (S3): jaringan saraf yang menumbuhkan/memangkas kapasitasnya
+secara otonom pada stream data non-stasioner, dengan objektif *predictive
+coding* dan controller adaptif (Adaptive Growth Controller, AGC).
+
+Paper awal (diagnostic study) tersedia sebagai PDF di root. Repo ini berisi
+implementasi, redesign controller, dan seluruh eksperimen lanjutan.
+
+## Struktur
+
+```
+src/
+  core/sgnn_core.py          # jaringan grow/prune (tanh MLP) + Adam online
+  controller/agc.py          # AGC versi paper (fase 1, diagnostic)
+  controller/agc_v2.py       # AGC redesigned (R1-R5, paper §IV.F)
+  eval/synthetic_stream.py   # generator stream sintetis (mixture, v2)
+  eval/stream_generators.py  # generator standar MOA: SEA, RandomRBF
+experiments/
+  run_experiment.py          # fase 1: studi diagnostik (paper)
+  run_experiment_v2.py       # fase 2: v2 + baseline, 3 seed
+  run_fase3.py               # fase 3: 10 seed + signifikansi + detrended corr
+  run_fase3b.py              # fase 3b: stress test jalur GROW
+  run_fase4.py               # fase 4: MOA SEA & RandomRBF
+  run_fase5_clear10.py       # fase 5: Clear-10 (backbone ResNet18 beku)
+  run_fase6_cifar100.py      # fase 6: Split-CIFAR100
+  run_fase7_amazon.py        # fase 7: Amazon Product Reviews
+  download_cifar100.py       # unduh CIFAR-100 dengan resume
+results/                     # log CSV, statistik, figur
+```
+
+## Reproduksi
+
+```bash
+pip install numpy pandas matplotlib scikit-learn scipy pillow requests
+# fase 2-4 tidak butuh data eksternal:
+python experiments/run_experiment_v2.py
+python experiments/run_fase3.py
+python experiments/run_fase3b.py
+python experiments/run_fase4.py
+# fase 5-7 mengunduh dataset otomatis (butuh internet + torch/torchvision):
+python experiments/run_fase5_clear10.py
+python experiments/run_fase6_cifar100.py
+python experiments/run_fase7_amazon.py
+```
+
+## Ringkasan hasil
+
+| Fase | Dataset | Temuan utama |
+|---|---|---|
+| 1 | sintetis | Kegagalan controller awal (3×PRUNE, 0×GROW, drift tidak terdeteksi) — didokumentasikan di paper |
+| 2 | sintetis (3 seed) | Redesign berhasil: v2 unggul PE vs static/grow-only/prune-only |
+| 3 | sintetis kompleks (10 seed) | Signifikan vs static (p=5e-7 PE akhir); korelasi PE-akurasi negatif setelah detrending (−0.42) |
+| 3b | sintetis padat | GROW konsisten tepat di titik drift; kapasitas tetap konservatif |
+| 4 | MOA SEA, RandomRBF | RandomRBF: drift terdeteksi 16–20 langkah, PE terbaik; SEA: label-only drift tidak terdeteksi predictive coding |
+| 5 | Clear-10 | PE v2 −5.6% vs static, deteksi 2/3 batas temporal, probe 0.173 vs 0.125 |
+| 6 | Split-CIFAR100 | PE v2 −6.3%, deteksi 8/9 batas task (delay 65), probe 0.162 vs 0.122 |
+| 7 | Amazon Reviews | PE v2 −8.6% (akhir −17%), deteksi 4/9 segmen, probe 0.246 vs 0.251 |
+
+Laporan rinci: `RESULTS_FASE2.md` … `RESULTS_FASE7.md`;
+matriks lengkap: `STATUS_MODEL.md`.

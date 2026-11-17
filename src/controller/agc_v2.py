@@ -1,25 +1,9 @@
-"""
-AGC v2 — implementasi 5 redesign requirements dari paper (Section IV.F):
-  R1. Warmup mendahului semua update statistik; first-step loss di-exclude.
-  R2. Threshold GROW dan PRUNE decoupled (B_t dari statistik S berbasis
-      persentil ber-lag; P_t tidak lagi diturunkan dari mu_S/sigma_S,
-      melainkan dari statistik PE mentah).
-  R3. Drift signal independen dari riwayat struktural: window referensi
-      digeser berkala (sliding reset tiap W_ref langkah), bukan hanya
-      sesudah aksi struktural; gamma MMD via median heuristic.
-  R4. Growth pathway reachable: threshold grow berbasis persentil, dan
-      marginal gain diuji dengan lapisan neuron baru yang di-init ulang
-      (grow dengan reinit output kecil) supaya PE_after realistis.
-  R5. (di run_experiment_v2.py) baseline static / grow-only / prune-only.
-
-Semua sinyal tetap unsupervised.
-"""
+"""AGC v2 — implementasi 5 redesign requirements dari paper (Section IV.F):"""
 
 from collections import deque
 import numpy as np
 
 from src.controller.agc import ReservoirBuffer, _rbf_mmd2
-
 
 class RunningStat:
     """Mean & std via Welford (robust, dipakai setelah warmup selesai)."""
@@ -39,7 +23,6 @@ class RunningStat:
     def sigma(self) -> float:
         return float(np.sqrt(max(self.m2 / max(self.n - 1, 1), 0.0)))
 
-
 def _median_heuristic_gamma(X: np.ndarray, rng: np.random.Generator,
                             max_samples: int = 200) -> float:
     """gamma = 1/median(sqdist) — sensitif terhadap skala fitur (fix MMD 'mati')."""
@@ -52,24 +35,22 @@ def _median_heuristic_gamma(X: np.ndarray, rng: np.random.Generator,
     med = np.median(sq[iu])
     return 1.0 / med if med > 0 else 1.0
 
-
 class AdaptiveGrowthControllerV2:
     def __init__(
         self,
         alpha=0.4, beta=0.3, gamma=0.3,
         k_sigma=1.5,
         loss_window=30,
-        drift_window=100,      # panjang W_ref dan W_cur
-        ref_slide_every=100,   # R3: reset W_ref berkala
+        drift_window=100,
+        ref_slide_every=100,
         warmup_T=200,
         refractory_T=200,
         novelty_capacity=500, replay_capacity=100,
         delta_n_grow=8, n_prune=4, knn_k=5,
-        # R4: threshold decoupled, berbasis persentil
-        grow_q=0.95,           # B_t = persentil-q dari histori S (ber-lag)
-        prune_pe_q=0.20,       # prune hanya jika PE smoothed < persentil-q histori PE
-        n_floor=16,            # jangan prune di bawah ini
-        lag_steps=100,         # lag antara histori threshold dan kondisi kini
+        grow_q=0.95,
+        prune_pe_q=0.20,
+        n_floor=16,
+        lag_steps=100,
         seed=0,
     ):
         self.alpha, self.beta, self.gamma = alpha, beta, gamma
@@ -89,7 +70,6 @@ class AdaptiveGrowthControllerV2:
         self._steps_since_ref_reset = 0
         self._gamma_mmd = None
 
-        # histori untuk threshold persentil & PE (dihindari kontaminasi via lag)
         self._s_hist = deque(maxlen=1000)
         self._pe_hist = deque(maxlen=1000)
         self._novelty_hist = deque(maxlen=1000)
@@ -98,21 +78,19 @@ class AdaptiveGrowthControllerV2:
         self.novelty_buffer = ReservoirBuffer(novelty_capacity, seed)
         self.replay_buffer = ReservoirBuffer(replay_capacity, seed + 1)
 
-        # R1: statistik hanya hidup SETELAH warmup terisi dari data clean
         self.stat_loss = RunningStat()
         self.stat_drift = RunningStat()
         self.stat_novelty = RunningStat()
         self._warmup_pool = {"delta_L": [], "drift": [], "novelty": []}
 
         self.L_prev = 0.0
-        self.warmup_counter = warmup_T   # R1: warmup DULU, bukan 0
+        self.warmup_counter = warmup_T
         self.refractory_counter = 0
         self.status_drift = "NORMAL"
         self.B_t, self.P_t = np.inf, -np.inf
         self.grow_seed = seed + 100
         self.rng = np.random.default_rng(seed + 7)
 
-    # ---------- sinyal-sinyal ----------
     def _update_loss_trend(self, pe_t):
         self.pe_window.append(pe_t)
         L_t = float(np.mean(self.pe_window))
@@ -124,7 +102,6 @@ class AdaptiveGrowthControllerV2:
         self.window_recent.append(x_t)
         if len(self.window_recent) < self.drift_window:
             return 0.0
-        # R3: window referensi adalah snapshot berkala (independen dari aksi struktural)
         if self._ref_snapshot is None or self._steps_since_ref_reset >= self.ref_slide_every:
             self._ref_snapshot = np.array(self.window_recent)
             self._steps_since_ref_reset = 0
@@ -149,7 +126,6 @@ class AdaptiveGrowthControllerV2:
             self.novelty_buffer.add(x_t.copy())
         return novelty_raw
 
-    # ---------- langkah utama ----------
     def step(self, x_t: np.ndarray, pe_t: float, sgnn):
         delta_L = self._update_loss_trend(pe_t)
         drift_raw = self._update_drift(x_t)
@@ -162,21 +138,16 @@ class AdaptiveGrowthControllerV2:
         S_t = np.nan
 
         if self.warmup_counter > 0:
-            # R1: selama warmup -> HANYA kumpulkan sampel clean, tanpa update
-            # statistik, tanpa keputusan struktural.
             self._warmup_pool["delta_L"].append(delta_L)
             self._warmup_pool["drift"].append(drift_raw)
             self._warmup_pool["novelty"].append(novelty_raw)
             self.warmup_counter -= 1
             if self.warmup_counter == 0:
-                # init statistik dari pool warmup (first-step loss ikut pool
-                # tapi didilusi dalam 200 sampel; bukan 1 dari 1)
                 self.stat_loss = RunningStat();  [self.stat_loss.update(v) for v in self._warmup_pool["delta_L"]]
                 self.stat_drift = RunningStat(); [self.stat_drift.update(v) for v in self._warmup_pool["drift"]]
                 self.stat_novelty = RunningStat(); [self.stat_novelty.update(v) for v in self._warmup_pool["novelty"]]
                 self._s_hist.clear()
         else:
-            # update statistik online (normal)
             self.stat_loss.update(delta_L)
             self.stat_drift.update(drift_raw)
             self.stat_novelty.update(novelty_raw)
@@ -186,7 +157,6 @@ class AdaptiveGrowthControllerV2:
             Z_novelty = (novelty_raw - self.stat_novelty.mean) / (self.stat_novelty.sigma + 1e-6)
             S_t = self.alpha * Z_loss + self.beta * Z_drift + self.gamma * Z_novelty
 
-            # status drift ala DDM berbasis drift_raw
             if drift_raw >= self.stat_drift.mean + 3 * self.stat_drift.sigma:
                 self.status_drift = "DRIFT"
             elif drift_raw >= self.stat_drift.mean + 2 * self.stat_drift.sigma:
@@ -196,7 +166,6 @@ class AdaptiveGrowthControllerV2:
 
             self._s_hist.append(S_t)
 
-            # R2 + R4: threshold decoupled, persentil ber-lag
             s_arr = np.array(self._s_hist)
             pe_arr = np.array(self._pe_hist)
             if len(s_arr) > self.lag_steps:
@@ -208,8 +177,6 @@ class AdaptiveGrowthControllerV2:
             pe_smooth = float(np.mean(list(self.pe_window)))
             in_refractory = self.refractory_counter > 0
 
-            # R2: prune dipicu dari persentil histori PE smoothed (window 500)
-            # agar konsisten skala pada stream non-stasioner.
             self._pesmooth_hist.append(pe_smooth)
             pe_hist = np.array(self._pesmooth_hist)
             pe_prune_thr = float(np.percentile(pe_hist[-500:], self.prune_pe_q * 100))
@@ -228,13 +195,9 @@ class AdaptiveGrowthControllerV2:
             elif len(pe_hist) > 500 and pe_smooth < pe_prune_thr \
                     and self.status_drift == "NORMAL" \
                     and sgnn.N > self.n_floor:
-                # R2: prune dipicu oleh PE rendah (kapasitas underutilized),
-                # BUKAN oleh skor S yang sama dengan B_t.
                 sgnn.prune(self.n_prune)
                 action = "PRUNE"
                 self.refractory_counter = self.refractory_T
-                # reset window ref sesudah aksi struktural tetap dilakukan
-                # (CATATAN 2 pseudocode), tapi bukan satu-satunya pemicu reset.
 
             if self.refractory_counter > 0:
                 self.refractory_counter -= 1
@@ -258,7 +221,6 @@ class AdaptiveGrowthControllerV2:
         base = sgnn.clone()
         base.train_batch(pairs, steps=steps, lr=1e-2)
         pe_base = base.eval_pe_batch(pairs)
-        # R4: neuron baru zero-out di W2 agar grow tidak merusak output.
         trial = sgnn.clone()
         trial.grow(self.delta_n_grow, seed=self.grow_seed, zero_out=True)
         self.grow_seed += 1
@@ -268,7 +230,6 @@ class AdaptiveGrowthControllerV2:
         g_m = ((pe_base - pe_trial) / (pe_base + 1e-9)) \
             - self.lambda_complex() * (self.delta_n_grow / sgnn.N)
         if g_m > 0:
-            # komit tanpa training replay agar tidak terbias sampel stale.
             sgnn.grow(self.delta_n_grow, seed=self.grow_seed, zero_out=True)
         return g_m
 

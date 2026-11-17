@@ -1,9 +1,4 @@
-"""
-Eksperimen Fase 2 — SGNN-AGB dengan AGC v2 (redesign sesuai paper §IV.F)
-vs baselines: static-capacity, grow-only, prune-only.
-Multi-seed (3 seed stream). Output: results/fase2_*.csv, fase2_summary.csv,
-figur PNG, dan ringkasan konsol.
-"""
+"""Eksperimen Fase 2 — SGNN-AGB dengan AGC v2 (redesign sesuai paper §IV.F)"""
 
 import sys, os, time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -20,7 +15,6 @@ from src.eval.synthetic_stream import generate_stream
 
 RESULTS = os.path.join(os.path.dirname(__file__), "..", "results")
 os.makedirs(RESULTS, exist_ok=True)
-
 
 def hidden_accuracy_probe(H_hist, labels_hist, window=200, k=3):
     """Probe pada representasi hidden h_t. Window yang melintasi aksi
@@ -49,7 +43,6 @@ def hidden_accuracy_probe(H_hist, labels_hist, window=200, k=3):
         idxs.append(test_end)
     return np.array(idxs), np.array(accs)
 
-
 def run_config(X, labels, drift_points, novelty_points, mode, stream_seed, verbose=False):
     """mode: 'sgnn_agb_v2' | 'static' | 'grow_only' | 'prune_only'"""
     T, d = len(X) - 1, X.shape[1]
@@ -67,8 +60,6 @@ def run_config(X, labels, drift_points, novelty_points, mode, stream_seed, verbo
             agc.update_replay(x_t, x_next)
             info = agc.step(x_t, pe_t, sgnn)
         elif mode == "grow_only":
-            # baseline: coba grow di titik drift/novelty (berbantuan oracle,
-            # tanpa controller) dengan marginal gain yang sama
             info = {"S_t": np.nan, "B_t": np.nan, "P_t": np.nan,
                     "status_drift": "NORMAL", "action": "STOP", "g_m": None}
             if t in list(drift_points) + list(novelty_points) and sgnn.N < 128:
@@ -87,7 +78,7 @@ def run_config(X, labels, drift_points, novelty_points, mode, stream_seed, verbo
             if t > 0 and t % 1000 == 0 and sgnn.N > 16:
                 sgnn.prune(4)
                 info["action"] = "PRUNE"
-        else:  # static
+        else:
             info = {"S_t": np.nan, "B_t": np.nan, "P_t": np.nan,
                     "status_drift": "NORMAL", "action": "STOP", "g_m": None}
 
@@ -98,13 +89,11 @@ def run_config(X, labels, drift_points, novelty_points, mode, stream_seed, verbo
 
     df = pd.DataFrame(log_rows)
 
-    # probe offline (satu-satunya pemakaian label)
     idxs, accs = hidden_accuracy_probe(H_hist, labels[: len(H_hist)])
     pe_smooth = df["pe_t"].rolling(50, min_periods=1).mean().values
     pe_at_probe = pe_smooth[np.clip(idxs, 0, len(pe_smooth) - 1)]
     corr = np.corrcoef(pe_at_probe, accs)[0, 1] if len(accs) > 2 else np.nan
 
-    # metrik ringkas
     tail = df[df["t"] >= df["t"].max() - 1000]
     row = {
         "mode": mode, "stream_seed": stream_seed,
@@ -129,7 +118,6 @@ def run_config(X, labels, drift_points, novelty_points, mode, stream_seed, verbo
               f"neuron={row['n_neurons_final']} grow={row['grow_events']} "
               f"prune={row['prune_events']} corr={row['corr_pe_acc']:.3f}")
     return df, idxs, accs, pe_smooth, pe_at_probe, row
-
 
 def main():
     t0 = time.time()
@@ -161,7 +149,6 @@ def main():
     print(f"\nSelesai dalam {time.time() - t0:.0f} detik. "
           f"Output di folder results/.")
 
-
 def plot_run(df, idxs, accs, pe_smooth, pe_at_probe, drift_points, novelty_points, seed):
     fig, axes = plt.subplots(3, 1, figsize=(10, 10), sharex=True)
     axes[0].plot(df["t"], df["n_neurons"])
@@ -179,7 +166,6 @@ def plot_run(df, idxs, accs, pe_smooth, pe_at_probe, drift_points, novelty_point
     plt.tight_layout()
     plt.savefig(os.path.join(RESULTS, f"fase2_sgnn_agb_v2_seed{seed}.png"), dpi=130)
     plt.close(fig)
-
 
 if __name__ == "__main__":
     main()

@@ -1,7 +1,6 @@
 import copy
 import numpy as np
 
-
 class SGNNCore:
     def __init__(self, d_in: int, n0: int, seed: int = 0):
         rng = np.random.default_rng(seed)
@@ -71,7 +70,6 @@ class SGNNCore:
     def prune(self, n_remove: int):
         if n_remove <= 0 or self.N - n_remove < 4:
             return
-        # skor kontribusi kasar: neuron dengan bobot in+out terkecil dianggap "lemah"
         contrib = np.sum(np.abs(self.W1), axis=0) * np.sum(np.abs(self.W2), axis=1)
         idx_remove = np.argsort(contrib)[:n_remove]
         keep = np.setdiff1d(np.arange(self.N), idx_remove)

@@ -1,11 +1,7 @@
-"""
-Adaptive Growth Controller (AGC) — implementasi dari docs/agc_pseudocode.md.
-Semua sinyal (LossTrend, DriftScore, NoveltyScore, Marginal Gain) unsupervised.
-"""
+"""Adaptive Growth Controller (AGC) — implementasi dari docs/agc_pseudocode.md."""
 
 from collections import deque
 import numpy as np
-
 
 def _rbf_mmd2(X: np.ndarray, Y: np.ndarray, gamma: float = None) -> float:
     """MMD^2 tak berbias dengan kernel RBF, tanpa dependensi scipy."""
@@ -26,7 +22,6 @@ def _rbf_mmd2(X: np.ndarray, Y: np.ndarray, gamma: float = None) -> float:
             + (Kyy.sum() - np.trace(Kyy)) / (n * (n - 1))
             - 2 * Kxy.mean())
     return max(float(mmd2), 0.0)
-
 
 class ReservoirBuffer:
     """Buffer kapasitas tetap dengan reservoir sampling sederhana."""
@@ -52,14 +47,13 @@ class ReservoirBuffer:
     def __len__(self):
         return len(self.data)
 
-
 class EWMAStat:
     """Mean & mean-abs-deviation via EWMA, dipakai untuk z-score per sinyal."""
 
     def __init__(self, decay: float = 0.98):
         self.decay = decay
         self.mu = 0.0
-        self.sigma = 1.0  # netral di awal
+        self.sigma = 1.0
         self.initialized = False
 
     def update(self, x: float):
@@ -73,7 +67,6 @@ class EWMAStat:
 
     def zscore(self, x: float, eps: float = 1e-6) -> float:
         return (x - self.mu) / (self.sigma + eps)
-
 
 class AdaptiveGrowthController:
     def __init__(
@@ -99,7 +92,7 @@ class AdaptiveGrowthController:
         self.stat_loss = EWMAStat(ewma_decay)
         self.stat_drift = EWMAStat(ewma_decay)
         self.stat_novelty = EWMAStat(ewma_decay)
-        self.stat_S = EWMAStat(ewma_decay)  # untuk B(t)/P(t)
+        self.stat_S = EWMAStat(ewma_decay)
 
         self.novelty_buffer = ReservoirBuffer(novelty_capacity, seed)
         self.replay_buffer = ReservoirBuffer(replay_capacity, seed + 1)
@@ -111,7 +104,6 @@ class AdaptiveGrowthController:
         self.B_t, self.P_t = 0.0, 0.0
         self.grow_seed = seed + 100
 
-    # ---------- sinyal-sinyal ----------
     def _update_loss_trend(self, pe_t):
         self.pe_window.append(pe_t)
         L_t = float(np.mean(self.pe_window))
@@ -135,20 +127,15 @@ class AdaptiveGrowthController:
             dists = np.linalg.norm(buf - x_t, axis=1)
             k_nearest = np.sort(dists)[: self.knn_k]
             novelty_raw = float(np.mean(k_nearest))
-        # tambahkan ke buffer novelty (representatif = novelty tinggi, atau buffer belum penuh)
         if len(self.novelty_buffer) < self.novelty_buffer.capacity or novelty_raw > self.stat_novelty.mu:
             self.novelty_buffer.add(x_t.copy())
         return novelty_raw
 
-    # ---------- langkah utama ----------
     def step(self, x_t: np.ndarray, pe_t: float, sgnn):
         delta_L = self._update_loss_trend(pe_t)
         drift_raw = self._update_drift(x_t)
         novelty_raw = self._update_novelty(x_t)
 
-        # in_cooldown = masih dalam masa tenang pasca aksi struktural terakhir
-        # (warmup ATAU refractory). Selama cooldown: statistik dibekukan DAN
-        # tidak boleh ada aksi struktural baru (lihat CATATAN 4 di pseudocode).
         in_cooldown = self.warmup_counter > 0 or self.refractory_counter > 0
         frozen_stats = in_cooldown or self.status_drift == "DRIFT"
 
@@ -162,7 +149,6 @@ class AdaptiveGrowthController:
         Z_novelty = self.stat_novelty.zscore(novelty_raw)
         S_t = self.alpha * Z_loss + self.beta * Z_drift + self.gamma * Z_novelty
 
-        # status drift ala DDM, tapi berbasis drift_raw (bukan error klasifikasi)
         if drift_raw >= self.stat_drift.mu + 3 * self.stat_drift.sigma:
             self.status_drift = "DRIFT"
         elif drift_raw >= self.stat_drift.mu + 2 * self.stat_drift.sigma:
@@ -196,7 +182,6 @@ class AdaptiveGrowthController:
             self.warmup_counter = self.warmup_T
             self.window_ref = deque(self.window_recent, maxlen=self.window_recent.maxlen)
 
-        # decrement di akhir step, setelah dipakai konsisten di seluruh langkah ini
         if self.warmup_counter > 0:
             self.warmup_counter -= 1
         if self.refractory_counter > 0:
