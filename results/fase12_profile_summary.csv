@@ -1,0 +1,3 @@
+mode,mean_ms_step,median_ms_step,p95_ms_step,n_neurons_final,param_kb
+sgnn_agb_v2,4.11,3.26,7.741,61.333,47.812
+static,0.378,0.355,0.539,64.0,49.875
