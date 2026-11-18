@@ -18,15 +18,16 @@ Tanggal: 2026-11-17. Dataset: CIFAR-100 (Krizhevsky 2009, 60.000 citra
 
 | Mode | PE(all) | PE(2 task terakhir) | Neuron akhir | GROW | PRUNE | Batas task terdeteksi | Delay | Probe acc |
 |---|---|---|---|---|---|---|---|---|
-| **AGC v2** | **318.5** | **303.8** | 16 | 0 | 12 | **8/9** | ~65 langkah | **0.162** |
-| static | 339.7 | 336.3 | 64 | 0 | 0 | 0/9 | – | 0.122 |
+| **AGC v2** | **318.5** | **303.8** | 16 | 0 | 12 | **8/9** | ~65 langkah | 0.492 |
+| static | 339.7 | 336.3 | 64 | 0 | 0 | 0/9 | – | **0.606** |
 
 - v2 menurunkan PE **6.3%** (keseluruhan) dan **9.7%** (dua task terakhir),
   konsisten di ketiga seed.
 - **Deteksi drift kuat**: 8 dari 9 batas task terdeteksi, delay hanya ~65
   langkah (batas task adalah perubahan distribusi kelas yang tajam).
-- **Probe accuracy v2 = 0.162 > static 0.122** (chance 0.10): representasi
-  hidden v2 lebih diskriminatif, meskipun objektifnya predictive coding.
+- **Probe hidden v2 = 0.492 < static 0.606** (chance 0.10): keduanya jauh
+  di atas chance, tetapi representasi v2 yang dipangkas ke 16 neuron lebih
+  sedikit menyimpan informasi kelas.
 
 ## Catatan
 
@@ -37,9 +38,13 @@ Tanggal: 2026-11-17. Dataset: CIFAR-100 (Krizhevsky 2009, 60.000 citra
 - Probe accuracy rendah secara absolut karena representasi dioptimalkan
   untuk memprediksi fitur berikutnya (bukan klasifikasi); angka ini berfungsi
   sebagai indikator relatif, sesuai peran probe di paper (§II.G).
-- Forgetting rate formal (backward transfer) belum dihitung — memerlukan
-  evaluasi per task setelah seluruh stream; dapat ditambahkan sebagai metrik
-  fase berikutnya.
+- Forgetting/BWT diukur di fase 9: v2 **forgetting 0.100, BWT −0.104** vs
+  static **0.031 / −0.020**. v2 beradaptasi lebih cepat tetapi lebih banyak
+  melupakan task lama.
+
+**Koreksi evaluasi**: probe memakai hidden state `h` (bukan output prediksi
+`x_pred`). Angka probe lama (0.162 vs 0.122) berasal dari bug evaluasi dan
+telah diganti dengan hasil rerun di atas.
 
 ## Output
 

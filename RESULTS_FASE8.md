@@ -24,14 +24,15 @@
 | GROW / PRUNE | 0 / 12 | 0 / 0 |
 | Deteksi batas harian | **9/9** | 0/9 |
 | Delay deteksi | ~24 event | – |
-| Probe acc (rata-rata) | **0.467** | 0.460 |
-| Probe acc (segmen akhir) | **0.538** | 0.517 |
+| Probe acc (rata-rata) | **0.483** | 0.480 |
+| Probe acc (segmen akhir) | 0.441 | **0.516** |
 
 - PE turun **10.9%** (rata-rata) dan **17.9%** di akhir stream.
 - v2 **memangkas** kapasitas ke 16 neuron (static tetap 64) namun tetap
   lebih akurat → penghematan kapasitas, bukan penambahan.
-- Probe hidden (0.467) hampir menyamai kNN pada fitur mentah (0.483),
-  berbeda dari citra acak: struktur item/kategori memang tertangkap
+- Probe hidden v2 (0.483) menyamai kNN pada fitur mentah (0.483) dan
+  sedikit di atas static (0.480) pada rata-rata; di segmen akhir static
+  lebih tinggi (0.516 vs 0.441). Struktur item/kategori tertangkap
   predictive coding pada stream e-commerce kronologis.
 - Tidak ada GROW karena stream e-commerce harian tidak memunculkan
   kelas/komponen baru; controller memilih jalur PRUNE.
@@ -40,5 +41,8 @@
 
 - Mirror publik hanya menyediakan sampel; klaim skala 100 juta tetap
   tidak direplikasi (lihat `STATUS_MODEL.md`).
+- **Koreksi evaluasi**: probe memakai hidden state `h` (bukan output
+  prediksi `x_pred`); angka probe di atas adalah hasil rerun setelah
+  perbaikan.
 - Hasil reproducible: `results/fase8_taobao_summary.csv`,
   `results/fase8_taobao_v2_seed0.csv`, `results/fase8_taobao.png`.

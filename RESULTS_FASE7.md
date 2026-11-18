@@ -20,17 +20,16 @@ direproduksi di CPU.
 | Mode | PE(all) | PE(2 segmen terakhir) | Neuron akhir | GROW | PRUNE | Batas drift terdeteksi | Delay | Probe acc |
 |---|---|---|---|---|---|---|---|---|
 | **AGC v2** | **0.170** | **0.136** | 16 | 0 | 12 | 4/9 | ~327 langkah | 0.246 |
-| static | 0.186 | 0.164 | 64 | 0 | 0 | 0/9 | – | 0.251 |
+| static | 0.186 | 0.164 | 64 | 0 | 0 | 0/9 | – | 0.234 |
 
 - v2 menurunkan PE **8.6%** (keseluruhan) dan **17%** (dua segmen terakhir),
   konsisten di ketiga seed.
 - Deteksi drift: 4 dari 9 batas segmen waktu terdeteksi (delay rata-rata
   ~327 langkah). Batas yang tidak terdeteksi adalah pergeseran bertahap —
   konsisten dengan perilaku detektor pada drift gradual.
-- Probe accuracy v2 = 0.246 > chance 0.20 (static 0.251): representasi hidden
-  predictive-coding memiliki sinyal kelas yang lemah namun ada — berbeda
-  dengan dataset citra acak (fase 5/6), karena ulasan berurutan waktu
-  memiliki kontinuitas topik.
+- Probe hidden v2 = 0.246, static = 0.234 (chance 0.20): keduanya hanya
+  sedikit di atas chance. Kontinuitas topik pada ulasan kronologis tidak
+  cukup membuat hidden state menjadi pemisah rating yang kuat.
 
 ## Catatan
 
@@ -38,9 +37,12 @@ direproduksi di CPU.
   ini memakai 6.000 sampel (subset merata) sebagai validasi fungsional pada
   CPU. Eksperimen skala penuh tetap menjadi pekerjaan lanjutan (butuh GPU
   cluster sesuai §4.5 proposal).
-- NCDR (Novel Class Detection Rate) belum diukur — memerlukan definisi
-  kelas-baru pada kategori produk (butuh metadata `asin`→kategori), yang
-  tidak tersedia pada file 5-core ini.
+- NCDR diukur di fase 9 pada stream sintetis dengan kelas baru yang benar-
+  benar berbeda (1.00). Untuk Amazon, kelas baru tidak didefinisikan karena
+  metadata kategori tidak tersedia pada file 5-core ini.
+
+**Koreksi evaluasi**: probe memakai hidden state `h` (bukan output prediksi
+`x_pred`); angka di atas adalah hasil rerun setelah perbaikan.
 
 ## Output
 
