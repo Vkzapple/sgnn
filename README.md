@@ -16,7 +16,7 @@ src/
 experiments/
   run_experiment.py          # fase 1: studi diagnostik (paper)
   run_experiment_v2.py       # fase 2: v2 + baseline, 3 seed
-  run_fase3.py               # fase 3: 10 seed + signifikansi + detrended corr
+  run_fase3.py               # fase 3: 10 seed + uji signifikansi
   run_fase3b.py              # fase 3b: stress test jalur GROW
   run_fase4.py               # fase 4: MOA SEA & RandomRBF
   run_fase5_clear10.py       # fase 5: Clear-10 (backbone ResNet18 beku)
@@ -57,7 +57,7 @@ python experiments/run_fase10_ua_detrac.py
 |---|---|---|
 | 1 | sintetis | Kegagalan controller awal (3×PRUNE, 0×GROW, drift tidak terdeteksi) — didokumentasikan di paper |
 | 2 | sintetis (3 seed) | Redesign berhasil: v2 unggul PE vs static/grow-only/prune-only |
-| 3 | sintetis kompleks (10 seed) | Signifikan vs static (p=5e-7 PE akhir); korelasi PE-akurasi negatif setelah detrending (−0.42) |
+| 3 | sintetis kompleks (10 seed) | Signifikan vs static (p=5e-7 PE akhir); probe jenuh (~1.0) → klaim korelasi dicabut |
 | 3b | sintetis padat | GROW konsisten tepat di titik drift; kapasitas tetap konservatif |
 | 4 | MOA SEA, RandomRBF | RandomRBF: drift terdeteksi 16–20 langkah, PE terbaik; SEA: label-only drift tidak terdeteksi predictive coding |
 | 5 | Clear-10 | PE v2 −5.6% vs static, deteksi 2/3 batas temporal, probe 0.544 vs 0.695 |

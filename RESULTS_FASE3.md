@@ -13,10 +13,10 @@ novelty @4800 & @5600 menambah 1 komponen (4 → 12 komponen). File:
 
 | Mode | PE(all) | PE(last 1000) | Neuron akhir | Max neuron | GROW | PRUNE | Probe acc final |
 |------|---------|---------------|--------------|------------|------|-------|-----------------|
-| **SGNN-AGB v2** | **282.7** | **368.0** | 18.8 | 77.6 | 3.2 | 17.7 | **0.524** |
-| static | 287.1 | 382.3 | 64 | 64 | 0 | 0 | 0.233 |
-| grow-only (oracle) | 291.3 | 392.1 | 84.0 | 84.0 | 2.5 | 0 | 0.170 |
-| prune-only | 283.2 | 374.7 | 44 | 64 | 0 | 5 | 0.323 |
+| **SGNN-AGB v2** | **282.7** | **368.0** | 18.8 | 77.6 | 3.2 | 17.7 | 0.996 |
+| static | 287.1 | 382.3 | 64 | 64 | 0 | 0 | 1.000 |
+| grow-only (oracle) | 291.3 | 392.1 | 84.0 | 84.0 | 2.5 | 0 | 1.000 |
+| prune-only | 283.2 | 374.7 | 44 | 64 | 0 | 5 | 0.998 |
 
 ### Uji signifikansi (paired antar-seed) — `results/fase3_stats.txt`
 
@@ -30,19 +30,21 @@ novelty @4800 & @5600 menambah 1 komponen (4 → 12 komponen). File:
 Catatan jujur: keunggulan v2 atas prune-only pada PE keseluruhan tidak
 signifikan; keunggulan konsisten muncul pada PE akhir (post-adaptasi).
 
-## 2. Korelasi PE ↔ hidden accuracy — DETRENDED (masalah fase 2 tuntas)
+## 2. Korelasi PE ↔ hidden accuracy — TIDAK DAPAT DITAFSIRKAN
 
-Pada fase 2 korelasi Pearson mentah positif (+0.19) karena PE dan probe
-accuracy sama-sama menren naik terhadap waktu (confounded). Dengan
-detrending (residual terhadap tren linear waktu):
+Probe kNN per window pada stream sintetis **jenuh (~0.996–1.000) hampir di
+semua mode**. Penyebabnya: label kelas dalam window 200 langkah sangat
+autokorelasi (window sering hanya berisi 1–2 cluster), sehingga separabilitas
+hidden hampir sempurna dan bukan ukuran kualitas representasi.
 
-- mean corr_detrended **v2 = −0.418** (vs static −0.309, grow-only −0.320,
-  prune-only −0.254)
+Korelasi terdetrended yang terukur: v2 **+0.02**, static −0.35, grow-only
+−0.16, prune-only −0.39. Karena probe jenuh, angka ini **tidak bisa dipakai**
+untuk mengklaim PE adalah proxy kualitas representasi. Klaim lama (−0.42
+untuk v2) berasal dari probe yang salah (output prediksi) dan **dicabut**.
 
-**Arah sekarang NEGATIF, sesuai ekspektasi paper** ("higher PE should
-correspond to lower hidden accuracy"), dan paling kuat pada v2. Ini
-memverifikasi bahwa PE adalah proxy yang valid untuk kualitas representasi —
-salah satu gap yang dikeluhkan paper (korelasi tidak dilogging).
+Uji korelasi yang valid membutuhkan probe lintas-window (train pada window
+awal, uji pada window berikutnya) atau dataset klasifikasi dengan label
+independen (fase 5/6/8), bukan probe dalam-window pada stream sintetis.
 
 ## 3. Uji stres jalur GROW (fase 3b) — `experiments/run_fase3b.py`
 
@@ -65,8 +67,8 @@ mixture Gaussian padat.
 | Multi-seed results | ✅ 10 seed (fase 3) + 3 seed (fase 2) |
 | Baseline comparison (static, grow-only, prune-only) | ✅ |
 | Significance testing | ✅ paired t-test + Wilcoxon, dilogging ke `results/fase3_stats.txt` |
-| Korelasi PE ↔ hidden accuracy dilogging & diverifikasi | ✅ (detrended, negatif) |
-| Evaluasi pada dataset riil non-stasioner | ⬜ fase berikutnya |
+| Korelasi PE ↔ hidden accuracy dilogging & diverifikasi | ⚠️ dilogging, tetapi probe sintetis jenuh → tidak valid untuk klaim |
+| Evaluasi pada dataset riil non-stasioner | ✅ fase 5–8 + video fase 10 |
 | Hardware profiling (latensi/memori/energi, motivasi edge) | ⬜ fase berikutnya |
 | Stream yang benar-benar menuntut pertumbuhan kapasitas besar | ⬜ perlu stream tak-linier |
 

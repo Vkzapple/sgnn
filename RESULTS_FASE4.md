@@ -20,10 +20,12 @@ pada hidden state.
 
 | Stream | Mode | PE(all) | PE(last 1k) | Neuron akhir | GROW | PRUNE | Deteksi drift (delay) | Probe acc |
 |--------|------|---------|-------------|--------------|------|-------|----------------------|-----------|
-| RandomRBF | **v2** | **304.0** | **589.8** | 28.8 | 4.4 | 17.6 | **16–20 langkah** | **0.548** |
-| RandomRBF | static | 308.7 | 598.3 | 64 | 0 | 0 | – | 0.470 |
-| SEA-abrupt | v2 | 27.42 | **26.28** | 24.8 | 5.4 | 20.6 | 57–448* | **0.668** |
-| SEA-abrupt | static | 27.36 | 27.44 | 64 | 0 | 0 | – | 0.638 |
+| RandomRBF | **v2** | **304.0** | **589.8** | 28.8 | 4.4 | 17.6 | **16–20 langkah** | 0.812 |
+| RandomRBF | static | 308.7 | 598.3 | 64 | 0 | 0 | – | **0.846** |
+| SEA-abrupt | v2 | 27.42 | **26.28** | 24.8 | 5.4 | 20.6 | 57–448* | 0.608 |
+| SEA-abrupt | static | 27.36 | 27.44 | 64 | 0 | 0 | – | **0.756** |
+| SEA-gradual | v2 | 27.42 | **26.28** | 24.8 | 5.4 | 20.6 | 57–448* | 0.608 |
+| SEA-gradual | static | 27.36 | 27.44 | 64 | 0 | 0 | – | **0.756** |
 
 \* delay SEA bervariasi liar karena alasan di bawah (temuan penting).
 
@@ -59,15 +61,24 @@ proposal (Tabel 4.6: "validasi terisolasi & kalibrasi detektor").
 64) karena jalur marginal-gain hanya meloloskan growth yang terbukti
 menurunkan PE pada replay. Konsisten dengan Fase 3.
 
+## Catatan probe hidden
+
+Probe memakai hidden state `h` (bukan output prediksi `x_pred`). Setelah
+koreksi, v2 **0.812** vs static **0.846** pada RandomRBF dan **0.608** vs
+**0.756** pada SEA. Pola ini konsisten dengan fase 5–6: model yang dipangkas
+lebih hemat kapasitas dan PE-nya lebih rendah, tetapi menyimpan lebih sedikit
+informasi kelas dibanding static berkapasitas penuh.
+
 ## Posisi terhadap rencana dataset proposal (Tabel 4.6)
 
 | Dataset proposal | Status |
 |---|---|
-| Data Sintetis MOA (SEA, RandomRBF) | ✅ **selesai** (fase 4) |
-| Clear-10 (citra, timestamp stream) | ⬜ berikutnya (paling dekat dengan setup sekarang) |
-| Split-CIFAR100 | ⬜ butuh migrasi PyTorch sesuai instrumen proposal |
-| Amazon Product Reviews (>10M) | ⬜ butuh protokol delayed label |
-| Taobao User Behavior (>10M) | ⬜ idem |
+| Data Sintetis MOA (SEA, RandomRBF) | ✅ selesai (fase 4) |
+| Clear-10 (citra, timestamp stream) | ✅ selesai (fase 5) |
+| Split-CIFAR100 | ✅ selesai (fase 6) |
+| Amazon Product Reviews | ✅ selesai (fase 7) |
+| Taobao User Behavior | ✅ selesai (fase 8, mirror publik) |
+| UA-DETRAC (video, tambahan) | ✅ selesai (fase 10) |
 
 ## Output
 

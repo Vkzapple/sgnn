@@ -18,7 +18,7 @@ Tianchi; dipakai sampel 100k event dengan skema identik dari mirror publik.
 |---|---|---|---|---|
 | 2 | sintetis campuran (3 seed) | 312.3 vs 319.0 | – | – |
 | 3 | sintetis kompleks (10 seed) | 282.7 vs 287.1 (p=0.0048) | – | – |
-| 4 | MOA SEA / RandomRBF (5 seed) | RandomRBF 304.0 vs 308.7 (p=0.035) | 16–20 langkah | 0.548 / 0.470 |
+| 4 | MOA SEA / RandomRBF (5 seed) | RandomRBF 304.0 vs 308.7 (p=0.035) | 16–20 langkah | 0.812 / 0.846 |
 | 5 | Clear-10 (3 seed) | 330.3 vs 350.1 | 2/3, ~273 langkah | 0.544 / 0.695 |
 | 6 | Split-CIFAR100 (3 seed) | 318.5 vs 339.7 | 8/9, ~65 langkah | 0.492 / 0.606 |
 | 7 | Amazon Reviews (3 seed) | 0.170 vs 0.186 | 4/9, ~327 langkah | 0.246 / 0.234 |
@@ -34,20 +34,24 @@ collapse seperti pada fase 1.
 
 ## Keterbatasan yang harus ditulis di jurnal
 
-1. **Predictive coding membutuhkan kontinuitas temporal.** Probe hidden v2
+1. **Probe sintetis jenuh**, sehingga korelasi PE–akurasi tidak dapat
+   ditafsirkan: label dalam window sangat autokorelasi dan probe kNN
+   mencapai ~1.0 di semua mode. Klaim korelasi negatif (−0.42) dari probe
+   lama dicabut. Uji yang valid membutuhkan probe lintas-window.
+2. **Predictive coding membutuhkan kontinuitas temporal.** Probe hidden v2
    lebih rendah dari static pada citra acak (Clear-10 0.544 vs 0.695;
    CIFAR-100 0.492 vs 0.606), dan masih di bawah kNN fitur backbone
    (0.804). PE turun karena penghematan kapasitas, bukan representasi kelas
    yang lebih baik.
-2. **Label-only drift (SEA)** tidak terdeteksi tanpa sinyal label.
-3. **NCDR terbatas pada novelty sejati.** NCDR 1.00 pada kelas baru
+3. **Label-only drift (SEA)** tidak terdeteksi tanpa sinyal label.
+4. **NCDR terbatas pada novelty sejati.** NCDR 1.00 pada kelas baru
    sintetis, tetapi hanya 0.074 pada batas task CIFAR-100 karena kelas baru
    tetap berada di distribusi piksel yang sama.
-4. **Trade-off forgetting.** v2 beradaptasi lebih cepat tetapi lebih banyak
+5. **Trade-off forgetting.** v2 beradaptasi lebih cepat tetapi lebih banyak
    melupakan: forgetting 0.100 vs static 0.031, BWT −0.104 vs −0.020.
-5. **Probe video mencapai ceiling (1.0) di kedua mode**, sehingga tidak
+6. **Probe video mencapai ceiling (1.0) di kedua mode**, sehingga tidak
    diskriminatif; metrik yang informatif adalah PE dan deteksi drift.
-6. **Skala proposal** (>10 juta sampel, delayed label, GPU A100) belum
+7. **Skala proposal** (>10 juta sampel, delayed label, GPU A100) belum
    direplikasi — eksperimen CPU dengan subset yang dapat direproduksi.
    Taobao memakai sampel mirror publik (100k event), bukan dataset penuh.
-7. **Hardware profiling** belum diukur.
+8. **Hardware profiling** belum diukur.
