@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 from experiments.run_fase5_clear10 import probe_acc_per_bucket, run_config, plot
-from experiments.video_data import FRAMES_PER_SEQ, N_SEQ, build_stream
+from experiments.video_data import N_SEQ, build_stream
 
 RESULTS = os.path.join(os.path.dirname(__file__), "..", "results")
 os.makedirs(RESULTS, exist_ok=True)
@@ -19,8 +19,7 @@ os.makedirs(RESULTS, exist_ok=True)
 def main():
     t0 = time.time()
     X, y, buckets = build_stream()
-    print(f"UA-DETRAC: {len(X)} frame, {N_SEQ} scene x {FRAMES_PER_SEQ}, "
-          f"X={X.shape}")
+    print(f"UA-DETRAC: {len(X)} frame, {N_SEQ} scene, X={X.shape}")
     base = probe_acc_per_bucket(X, y, buckets)
     print(f"Baseline kNN fitur: acc={np.mean(list(base.values())):.3f}")
 
