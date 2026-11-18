@@ -16,7 +16,7 @@ from experiments.run_fase6_cifar100 import features_from_rgb, load_split
 
 RESULTS = os.path.join(os.path.dirname(__file__), "..", "results")
 os.makedirs(RESULTS, exist_ok=True)
-WIN = 300
+WIN = 100
 
 
 def run(X, y, tasks, seed, mode):
@@ -41,9 +41,8 @@ def run(X, y, tasks, seed, mode):
         dims = {len(r) for r in ref + qry}
         if len(dims) != 1:
             continue
-        half = WIN // 2
         acc = knn_task_acc(np.array(ref), y[i - WIN:i],
-                           np.array(qry[:half]), y[i:i + half])
+                           np.array(qry), y[i:i + WIN])
         rows.append({
             "win": i, "acc": acc,
             "pe": float(np.mean(P[i:i + WIN])),
