@@ -121,11 +121,18 @@ def _extract_backbone(paths, batch=32):
 
 
 def probe_acc_per_bucket(H, y, buckets):
-    """kNN probe per bucket (label hanya untuk evaluasi)."""
+    """kNN probe per bucket (label hanya untuk evaluasi); dimensi hidden
+    yang berubah di tengah bucket ditangani dengan memilih dimensi mayoritas."""
     out = {}
     for b in np.unique(buckets):
         idx = np.where(buckets == b)[0]
-        h, lab = H[idx], y[idx]
+        dims = np.array([np.asarray(H[i]).shape[0] for i in idx])
+        if len(dims) == 0:
+            continue
+        dim = int(np.bincount(dims).argmax())
+        idx = idx[dims == dim]
+        h = np.stack([np.asarray(H[i]) for i in idx])
+        lab = y[idx]
         half = len(idx) // 2
         if half < 5:
             continue
@@ -156,7 +163,7 @@ def run_config(X, y, buckets, mode, model_seed):
         info.update(t=t, pe_t=pe, n_neurons=sgnn.N, bucket=buckets[t])
         log.append(info)
     df = pd.DataFrame(log)
-    acc = probe_acc_per_bucket(np.asarray(H), y[: len(H)], buckets[: len(H)])
+    acc = probe_acc_per_bucket(H, y[: len(H)], buckets[: len(H)])
 
     boundaries = [int(np.where(buckets == b)[0][0]) for b in np.unique(buckets)[1:]]
     delays = []
