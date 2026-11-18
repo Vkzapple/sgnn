@@ -18,14 +18,20 @@ from experiments.run_fase6_cifar100 import features_from_rgb, load_split
 RESULTS = os.path.join(os.path.dirname(__file__), "..", "results")
 os.makedirs(RESULTS, exist_ok=True)
 N_TASKS = 10
-MODES = ["sgnn_agb_v2", "sgnn_agb_v2_replay", "static"]
+MODES = ["sgnn_agb_v2", "sgnn_agb_v2_replay1", "sgnn_agb_v2_replay4",
+         "static"]
+
+
+def replay_steps(mode):
+    return int(mode[-1]) if mode.startswith("sgnn_agb_v2_replay") else 0
 
 
 def run_cifar(X, y, tasks, seed, mode):
     sgnn = SGNNCore(d_in=X.shape[1], n0=64, seed=seed)
     use_agc = mode.startswith("sgnn")
     agc = AdaptiveGrowthControllerV2(seed=seed) if use_agc else None
-    replay = ReservoirBuffer(200, seed + 1) if mode.endswith("replay") else None
+    k_replay = replay_steps(mode)
+    replay = ReservoirBuffer(200, seed + 1) if k_replay else None
     rng = np.random.default_rng(seed + 2)
 
     bounds = [int(np.where(tasks == t)[0][0]) for t in range(1, N_TASKS)]
@@ -38,9 +44,10 @@ def run_cifar(X, y, tasks, seed, mode):
             agc.update_replay(X[i], X[i + 1])
             agc.step(X[i], pe, sgnn)
         if replay is not None and len(replay) >= 20:
-            j = int(rng.integers(0, len(replay)))
-            xa, xb = replay.data[j]
-            sgnn.backward_and_step(xa, xb, lr=0.5e-2)
+            for _ in range(k_replay):
+                j = int(rng.integers(0, len(replay)))
+                xa, xb = replay.data[j]
+                sgnn.backward_and_step(xa, xb, lr=1e-2)
         if replay is not None:
             replay.add((X[i].copy(), X[i + 1].copy()))
 
