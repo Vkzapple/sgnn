@@ -55,6 +55,10 @@ class AdaptiveGrowthControllerV2:
         n_floor=16,
         lag_steps=100,
         seed=0,
+        use_warmup=True,
+        decoupled_thresholds=True,
+        use_drift=True,
+        fair_growth=True,
     ):
         self.alpha, self.beta, self.gamma = alpha, beta, gamma
         self.k_sigma = k_sigma
@@ -65,6 +69,10 @@ class AdaptiveGrowthControllerV2:
         self.delta_n_grow, self.n_prune, self.knn_k = delta_n_grow, n_prune, knn_k
         self.grow_q, self.prune_pe_q, self.n_floor = grow_q, prune_pe_q, n_floor
         self.lag_steps = lag_steps
+        self.use_warmup = use_warmup
+        self.decoupled_thresholds = decoupled_thresholds
+        self.use_drift = use_drift
+        self.fair_growth = fair_growth
 
         self.pe_window = deque(maxlen=loss_window)
         self.window_recent = deque(maxlen=drift_window)
@@ -87,7 +95,7 @@ class AdaptiveGrowthControllerV2:
         self._warmup_pool = {"delta_L": [], "drift": [], "novelty": []}
 
         self.L_prev = 0.0
-        self.warmup_counter = warmup_T
+        self.warmup_counter = warmup_T if use_warmup else 0
         self.refractory_counter = 0
         self.status_drift = "NORMAL"
         self.B_t, self.P_t = np.inf, -np.inf
@@ -131,7 +139,7 @@ class AdaptiveGrowthControllerV2:
 
     def step(self, x_t: np.ndarray, pe_t: float, sgnn):
         delta_L = self._update_loss_trend(pe_t)
-        drift_raw = self._update_drift(x_t)
+        drift_raw = self._update_drift(x_t) if self.use_drift else 0.0
         novelty_raw = self._update_novelty(x_t)
 
         self._pe_hist.append(pe_t)
@@ -164,7 +172,9 @@ class AdaptiveGrowthControllerV2:
             Z_novelty = (novelty_raw - self.stat_novelty.mean) / (self.stat_novelty.sigma + 1e-6)
             S_t = self.alpha * Z_loss + self.beta * Z_drift + self.gamma * Z_novelty
 
-            if drift_raw >= self.stat_drift.mean + 3 * self.stat_drift.sigma:
+            if not self.use_drift:
+                self.status_drift = "NORMAL"
+            elif drift_raw >= self.stat_drift.mean + 3 * self.stat_drift.sigma:
                 self.status_drift = "DRIFT"
             elif drift_raw >= self.stat_drift.mean + 2 * self.stat_drift.sigma:
                 self.status_drift = "WARNING"
@@ -178,8 +188,12 @@ class AdaptiveGrowthControllerV2:
             if len(s_arr) > self.lag_steps:
                 hist_s = s_arr[:-self.lag_steps]
                 self.B_t = float(np.percentile(hist_s, self.grow_q * 100))
-                self.P_t = float(np.percentile(pe_arr[:-self.lag_steps],
-                                               self.prune_pe_q * 100))
+                if self.decoupled_thresholds:
+                    self.P_t = float(np.percentile(pe_arr[:-self.lag_steps],
+                                                   self.prune_pe_q * 100))
+                else:
+                    self.P_t = float(np.percentile(hist_s,
+                                                   (1 - self.grow_q) * 100))
 
             pe_smooth = float(np.mean(list(self.pe_window)))
             in_refractory = self.refractory_counter > 0
@@ -187,19 +201,24 @@ class AdaptiveGrowthControllerV2:
             self._pesmooth_hist.append(pe_smooth)
             pe_hist = np.array(self._pesmooth_hist)
             pe_prune_thr = float(np.percentile(pe_hist[-500:], self.prune_pe_q * 100))
-            self.P_t = pe_prune_thr
+
+            if self.decoupled_thresholds:
+                prune_signal = pe_smooth < pe_prune_thr
+            else:
+                prune_signal = S_t < self.P_t
 
             if in_refractory:
                 action = "MAINTAIN"
             elif (S_t > self.B_t or self.status_drift == "DRIFT") \
                     and len(self.replay_buffer) >= 5:
-                g_m = self._try_grow(sgnn)
+                g_m = self._try_grow(sgnn) if self.fair_growth \
+                    else self._try_grow_legacy(sgnn)
                 if g_m is not None and g_m > 0:
                     action = "GROW"
                     self.refractory_counter = self.refractory_T
                 else:
                     action = "MAINTAIN"
-            elif len(pe_hist) > 500 and pe_smooth < pe_prune_thr \
+            elif len(pe_hist) > 500 and prune_signal \
                     and self.status_drift == "NORMAL" \
                     and sgnn.N > self.n_floor:
                 sgnn.prune(self.n_prune)
@@ -240,6 +259,11 @@ class AdaptiveGrowthControllerV2:
         if g_m > 0:
             sgnn.grow(self.delta_n_grow, seed=self.grow_seed, zero_out=True)
         return g_m
+
+    def _try_grow_legacy(self, sgnn):
+        sgnn.grow(self.delta_n_grow, seed=self.grow_seed)
+        self.grow_seed += 1
+        return 1.0
 
     def lambda_complex(self, lam=0.05):
         return lam
