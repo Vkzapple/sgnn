@@ -1,0 +1,5 @@
+mode,acc_final,learning_acc,forgetting,bwt
+sgnn_agb_v2,0.477,0.57,0.1,-0.104
+sgnn_agb_v2_replay1,0.465,0.548,0.099,-0.092
+sgnn_agb_v2_replay4,0.439,0.53,0.103,-0.101
+static,0.649,0.666,0.031,-0.02
