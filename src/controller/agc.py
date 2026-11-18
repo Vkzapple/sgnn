@@ -166,11 +166,11 @@ class AdaptiveGrowthController:
             self.B_t = self.stat_S.mu + self.k_sigma * self.stat_S.sigma
             self.P_t = self.stat_S.mu - self.lambda_prune * self.stat_S.sigma
 
-        action = "STOP"
+        action = "MAINTAIN"
         g_m = None
 
         if in_cooldown:
-            action = "STOP"
+            action = "MAINTAIN"
         elif S_t > self.B_t and len(self.replay_buffer) >= 5:
             g_m = self._try_grow(sgnn)
             if g_m is not None and g_m > 0:
@@ -179,7 +179,7 @@ class AdaptiveGrowthController:
                 self.warmup_counter = self.warmup_T
                 self.window_ref = deque(self.window_recent, maxlen=self.window_recent.maxlen)
             else:
-                action = "STOP"
+                action = "MAINTAIN"
         elif S_t < self.P_t:
             sgnn.prune(self.n_prune)
             action = "PRUNE"

@@ -108,7 +108,7 @@ UNTUK setiap frame t yang masuk dari kamera:
     // ---- 2.9 Keputusan struktural ----
     JIKA refractory_counter > 0:
         refractory_counter <- refractory_counter - 1
-        aksi <- "STOP"   // sedang masa tenang, tidak boleh grow dulu
+        aksi <- "MAINTAIN"   // sedang masa tenang, tidak boleh grow dulu
 
     LAIN JIKA S_t > B_t:
         // kandidat growth -> uji dulu dengan Marginal Gain sebelum dikomit
@@ -125,7 +125,7 @@ UNTUK setiap frame t yang masuk dari kamera:
             warmup_counter     <- T_warmup
             window_referensi   <- salin(window_terkini)   // reset window referensi
         LAINNYA:
-            aksi <- "STOP"   // growth ditolak, tidak untung
+            aksi <- "MAINTAIN"   // growth ditolak, tidak untung
 
     LAIN JIKA S_t < P_t:
         neuron_lemah <- identifikasi_neuron_kontribusi_rendah(SGNN_core)
@@ -135,7 +135,7 @@ UNTUK setiap frame t yang masuk dari kamera:
         window_referensi <- salin(window_terkini)
 
     LAINNYA:
-        aksi <- "STOP"
+        aksi <- "MAINTAIN"
 
 
     // ---- 2.10 Update bobot online (tetap jalan terlepas dari aksi struktural) ----

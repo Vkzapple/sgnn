@@ -4,6 +4,9 @@ Riset disertasi (S3): jaringan saraf yang menumbuhkan/memangkas kapasitasnya
 secara otonom pada stream data non-stasioner, dengan objektif *predictive
 coding* dan controller adaptif (Adaptive Growth Controller, AGC).
 
+Aksi struktural controller: **GROW**, **PRUNE**, dan **MAINTAIN**
+(mempertahankan kapasitas saat ini; pada log lama aksi ini tertulis `STOP`).
+
 ## Struktur
 
 ```

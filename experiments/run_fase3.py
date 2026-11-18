@@ -44,7 +44,7 @@ def run_config(X, labels, mode, stream_seed):
             agc.update_replay(x_t, x_next)
             info = agc.step(x_t, pe_t, sgnn)
         elif mode == "grow_only":
-            info = {"status_drift": "NORMAL", "action": "STOP"}
+            info = {"status_drift": "NORMAL", "action": "MAINTAIN"}
             if t in list([1500, 3500]) + novelty_points and sgnn.N < 128:
                 trial = sgnn.clone()
                 trial.grow(8, seed=stream_seed + t)
@@ -56,12 +56,12 @@ def run_config(X, labels, mode, stream_seed):
                     sgnn.grow(8, seed=stream_seed + t)
                     info["action"] = "GROW"
         elif mode == "prune_only":
-            info = {"status_drift": "NORMAL", "action": "STOP"}
+            info = {"status_drift": "NORMAL", "action": "MAINTAIN"}
             if t > 0 and t % 1000 == 0 and sgnn.N > 16:
                 sgnn.prune(4)
                 info["action"] = "PRUNE"
         else:
-            info = {"status_drift": "NORMAL", "action": "STOP"}
+            info = {"status_drift": "NORMAL", "action": "MAINTAIN"}
 
         info["t"] = t
         info["pe_t"] = pe_t

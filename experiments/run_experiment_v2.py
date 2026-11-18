@@ -68,7 +68,7 @@ def run_config(X, labels, drift_points, novelty_points, mode, stream_seed, verbo
             info = agc.step(x_t, pe_t, sgnn)
         elif mode == "grow_only":
             info = {"S_t": np.nan, "B_t": np.nan, "P_t": np.nan,
-                    "status_drift": "NORMAL", "action": "STOP", "g_m": None}
+                    "status_drift": "NORMAL", "action": "MAINTAIN", "g_m": None}
             if t in list(drift_points) + list(novelty_points) and sgnn.N < 128:
                 trial = sgnn.clone()
                 trial.grow(8, seed=stream_seed + t)
@@ -81,13 +81,13 @@ def run_config(X, labels, drift_points, novelty_points, mode, stream_seed, verbo
                     info["action"] = "GROW"
         elif mode == "prune_only":
             info = {"S_t": np.nan, "B_t": np.nan, "P_t": np.nan,
-                    "status_drift": "NORMAL", "action": "STOP", "g_m": None}
+                    "status_drift": "NORMAL", "action": "MAINTAIN", "g_m": None}
             if t > 0 and t % 1000 == 0 and sgnn.N > 16:
                 sgnn.prune(4)
                 info["action"] = "PRUNE"
         else:
             info = {"S_t": np.nan, "B_t": np.nan, "P_t": np.nan,
-                    "status_drift": "NORMAL", "action": "STOP", "g_m": None}
+                    "status_drift": "NORMAL", "action": "MAINTAIN", "g_m": None}
 
         info["t"] = t
         info["pe_t"] = pe_t

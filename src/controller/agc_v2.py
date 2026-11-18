@@ -136,7 +136,7 @@ class AdaptiveGrowthControllerV2:
 
         self._pe_hist.append(pe_t)
 
-        action = "STOP"
+        action = "MAINTAIN"
         g_m = None
         S_t = np.nan
         Z_novelty = np.nan
@@ -190,7 +190,7 @@ class AdaptiveGrowthControllerV2:
             self.P_t = pe_prune_thr
 
             if in_refractory:
-                action = "STOP"
+                action = "MAINTAIN"
             elif (S_t > self.B_t or self.status_drift == "DRIFT") \
                     and len(self.replay_buffer) >= 5:
                 g_m = self._try_grow(sgnn)
@@ -198,7 +198,7 @@ class AdaptiveGrowthControllerV2:
                     action = "GROW"
                     self.refractory_counter = self.refractory_T
                 else:
-                    action = "STOP"
+                    action = "MAINTAIN"
             elif len(pe_hist) > 500 and pe_smooth < pe_prune_thr \
                     and self.status_drift == "NORMAL" \
                     and sgnn.N > self.n_floor:

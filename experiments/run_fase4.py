@@ -38,7 +38,7 @@ def run_config(X, labels, mode, seed):
             agc.update_replay(X[t], X[t + 1])
             info = agc.step(X[t], pe, sgnn)
         else:
-            info = {"status_drift": "NORMAL", "action": "STOP"}
+            info = {"status_drift": "NORMAL", "action": "MAINTAIN"}
         info.update(t=t, pe_t=pe, n_neurons=sgnn.N)
         log.append(info)
     df = pd.DataFrame(log)
