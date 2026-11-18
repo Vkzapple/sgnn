@@ -30,7 +30,7 @@ CONFIGS = {
 def run_config(X, seed, kwargs):
     sgnn = SGNNCore(d_in=X.shape[1], n0=64, seed=0)
     agc = None if kwargs is None else AdaptiveGrowthControllerV2(seed=0, **kwargs)
-    actions, pes, n_max = [], [], sgnn.N
+    actions, statuses, pes, n_max = [], [], [], sgnn.N
     for t in range(len(X) - 1):
         x_t, x_next = X[t], X[t + 1]
         pe_t = sgnn.backward_and_step(x_t, x_next, lr=1e-2)
@@ -39,17 +39,29 @@ def run_config(X, seed, kwargs):
             agc.update_replay(x_t, x_next)
             info = agc.step(x_t, pe_t, sgnn)
             actions.append(info["action"])
+            statuses.append(info["status_drift"])
         else:
             actions.append("MAINTAIN")
+            statuses.append("NORMAL")
         n_max = max(n_max, sgnn.N)
+
+    delays = []
+    statuses = np.array(statuses)
+    for dp in (1500, 3500):
+        seg = np.where(statuses[dp:dp + 300] == "DRIFT")[0]
+        delays.append(int(seg[0]) if len(seg) else -1)
 
     return {
         "mean_pe_all": float(np.mean(pes)),
         "mean_pe_last1000": float(np.mean(pes[-1000:])),
+        "mean_pe_first300": float(np.mean(pes[:300])),
         "n_neurons_final": sgnn.N,
         "max_neurons": int(n_max),
         "grow_events": int(np.sum(np.array(actions) == "GROW")),
         "prune_events": int(np.sum(np.array(actions) == "PRUNE")),
+        "drift_events": int(np.sum(statuses == "DRIFT")),
+        "delay_d0": delays[0],
+        "delay_d1": delays[1],
     }
 
 
@@ -73,8 +85,9 @@ def main():
     df = pd.DataFrame(rows)
     df.to_csv(os.path.join(RESULTS, "fase11_ablation.csv"), index=False)
     summary = df.groupby("config")[["mean_pe_all", "mean_pe_last1000",
-                                    "n_neurons_final", "max_neurons",
-                                    "grow_events", "prune_events"]] \
+                                    "mean_pe_first300", "n_neurons_final",
+                                    "max_neurons", "grow_events", "prune_events",
+                                    "drift_events", "delay_d0", "delay_d1"]] \
         .mean().round(3)
     summary.to_csv(os.path.join(RESULTS, "fase11_ablation_summary.csv"))
 
