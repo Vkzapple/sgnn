@@ -22,6 +22,12 @@ experiments/
   run_fase5_clear10.py       # fase 5: Clear-10 (backbone ResNet18 beku)
   run_fase6_cifar100.py      # fase 6: Split-CIFAR100
   run_fase7_amazon.py        # fase 7: Amazon Product Reviews
+  run_fase8_taobao.py        # fase 8: Taobao UserBehavior (mirror publik)
+  run_fase9_cl_metrics.py    # fase 9: forgetting/BWT + NCDR
+  run_fase10_ua_detrac.py    # fase 10: video UA-DETRAC
+  taobao_data.py             # loader + fitur kausal Taobao
+  video_data.py              # frame UA-DETRAC via HTTP Range + fitur ResNet18
+  cl_metrics.py              # metrik continual learning
   download_cifar100.py       # unduh CIFAR-100 dengan resume
 results/                     # log CSV, statistik, figur
 ```
@@ -29,16 +35,20 @@ results/                     # log CSV, statistik, figur
 ## Reproduksi
 
 ```bash
-pip install numpy pandas matplotlib scikit-learn scipy pillow requests
+pip install numpy pandas matplotlib scikit-learn scipy pillow requests remotezip
 # fase 2-4 tidak butuh data eksternal:
 python experiments/run_experiment_v2.py
 python experiments/run_fase3.py
 python experiments/run_fase3b.py
 python experiments/run_fase4.py
-# fase 5-7 mengunduh dataset otomatis (butuh internet + torch/torchvision):
+# fase 5-8 mengunduh dataset otomatis (butuh internet + torch/torchvision):
 python experiments/run_fase5_clear10.py
 python experiments/run_fase6_cifar100.py
 python experiments/run_fase7_amazon.py
+python experiments/run_fase8_taobao.py
+# fase 9-10 (video memakai remote zip, tanpa unduh 4,2 GB):
+python experiments/run_fase9_cl_metrics.py
+python experiments/run_fase10_ua_detrac.py
 ```
 
 ## Ringkasan hasil
@@ -50,9 +60,12 @@ python experiments/run_fase7_amazon.py
 | 3 | sintetis kompleks (10 seed) | Signifikan vs static (p=5e-7 PE akhir); korelasi PE-akurasi negatif setelah detrending (−0.42) |
 | 3b | sintetis padat | GROW konsisten tepat di titik drift; kapasitas tetap konservatif |
 | 4 | MOA SEA, RandomRBF | RandomRBF: drift terdeteksi 16–20 langkah, PE terbaik; SEA: label-only drift tidak terdeteksi predictive coding |
-| 5 | Clear-10 | PE v2 −5.6% vs static, deteksi 2/3 batas temporal, probe 0.173 vs 0.125 |
-| 6 | Split-CIFAR100 | PE v2 −6.3%, deteksi 8/9 batas task (delay 65), probe 0.162 vs 0.122 |
-| 7 | Amazon Reviews | PE v2 −8.6% (akhir −17%), deteksi 4/9 segmen, probe 0.246 vs 0.251 |
+| 5 | Clear-10 | PE v2 −5.6% vs static, deteksi 2/3 batas temporal, probe 0.544 vs 0.695 |
+| 6 | Split-CIFAR100 | PE v2 −6.3%, deteksi 8/9 batas task (delay 65), probe 0.492 vs 0.606 |
+| 7 | Amazon Reviews | PE v2 −8.6% (akhir −17%), deteksi 4/9 segmen, probe 0.246 vs 0.234 |
+| 8 | Taobao UserBehavior | PE v2 −10.9% (akhir −17.9%), deteksi 9/9 harian, probe 0.483 vs 0.480 |
+| 9 | CIFAR-100 + sintetis | Forgetting v2 0.100 vs static 0.031; NCDR novelty 1.00 (FPR 0) |
+| 10 | UA-DETRAC (video) | PE v2 −6.2% (akhir −9.2%), deteksi 5/5 scene, GROW 10 event |
 
 Laporan rinci: `RESULTS_FASE2.md` … `RESULTS_FASE7.md`;
 matriks lengkap: `STATUS_MODEL.md`.
